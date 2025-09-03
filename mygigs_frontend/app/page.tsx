@@ -1,16 +1,15 @@
 import { type Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Quicksand } from "next/font/google";
 import "./globals.css";
-import { Button } from "@/components/ui/button";
+import { Hero } from "@/components/Hero";
+import { Stats } from "@/components/Stats";
+import { FeaturedGigs } from "@/components/FeaturedGigs";
+import { Testimonials } from "@/components/Testimonials";
+import { GrowWithUs } from "@/components/GrowWithUs";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const quicksand = Quicksand({
   subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700"],
 });
 
 export const metadata: Metadata = {
@@ -25,11 +24,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        Welcome to mygigs africa
-        <Button className="bg-black text-slate-50"> Welcome </Button>
+      <body className={`${quicksand.className}`}>
+        <Hero />
+        <Stats />
+        <FeaturedGigs />
+        <Testimonials />
+        <GrowWithUs />
         {children}
       </body>
     </html>
