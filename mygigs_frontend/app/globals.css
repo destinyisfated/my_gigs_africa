@@ -1,2 +1,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+
+body {
+  font-family: var(--font-quicksand), Quicksand, Arial, sans-serif;
+}

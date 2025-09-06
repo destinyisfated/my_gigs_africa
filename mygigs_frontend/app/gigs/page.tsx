@@ -1,172 +1,230 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { Input } from "@/components/ui/input";
-import { Slider } from "@/components/ui/slider";
-import { Button } from "@/components/ui/button";
-import { GigCard } from "@/components/GigCard";
-import { Loader2, SearchIcon, TagIcon, ChevronDownIcon } from "lucide-react";
+import GigCard from "@/components/GigCard";
+import { gigsData } from "@/data/gigsData";
+import { useState, useEffect } from "react";
 
-interface Gig {
-  id: number;
-  title: string;
-  description: string;
-  gig_type: string;
-  price: number;
-  image?: string;
-  location: string; // Added location field
-}
-
-export default function GigsPage() {
+const Home = () => {
   const [gigs, setGigs] = useState<Gig[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedType, setSelectedType] = useState("ALL");
-  const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000]);
+  const [filteredGigs, setFilteredGigs] = useState<Gig[]>([]);
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [selectedProfession, setSelectedProfession] = useState<string>("All");
+  const [priceRange, setPriceRange] = useState({ min: 0, max: 1500 });
 
-  const fetchGigs = useCallback(async () => {
-    setLoading(true);
-    let url = "http://localhost:8000/api/gigs/";
-    const params = new URLSearchParams();
+  // --- Pagination State ---
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const perPage = 8; // Number of gigs to display per page
 
-    if (searchTerm) {
-      params.append("search", searchTerm);
-    }
-    if (selectedType !== "ALL") {
-      params.append("gig_type", selectedType);
-    }
-    params.append("min_price", priceRange[0].toString());
-    params.append("max_price", priceRange[1].toString());
-
-    url += `?${params.toString()}`;
-
-    try {
-      const response = await fetch(url);
-      if (!response.ok) {
-        throw new Error("Failed to fetch gigs");
-      }
-      const data = await response.json();
-      setGigs(data);
-    } catch (error) {
-      console.error("Error fetching gigs:", error);
-      setGigs([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [searchTerm, selectedType, priceRange]);
+  // --- Notification State ---
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchGigs();
-  }, [fetchGigs]);
+    // Initial data load
+    setGigs(gigsData);
+  }, []);
+
+  useEffect(() => {
+    // This effect runs whenever filter states change
+    let updatedGigs = gigs.filter((gig) => {
+      const matchesSearch =
+        gig.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        gig.description.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesProfession =
+        selectedProfession === "All" || gig.profession === selectedProfession;
+      const matchesPrice =
+        gig.price >= priceRange.min && gig.price <= priceRange.max;
+
+      return matchesSearch && matchesProfession && matchesPrice;
+    });
+
+    setFilteredGigs(updatedGigs);
+    setCurrentPage(1); // Reset to the first page when filters change
+  }, [searchQuery, selectedProfession, priceRange, gigs]);
+
+  // Calculate the gigs to be displayed on the current page
+  const totalPages = Math.ceil(filteredGigs.length / perPage);
+  const startIndex = (currentPage - 1) * perPage;
+  const endIndex = startIndex + perPage;
+  const gigsToDisplay = filteredGigs.slice(startIndex, endIndex);
+
+  // Function to handle page change
+  const handlePageChange = (pageNumber: number) => {
+    if (pageNumber >= 1 && pageNumber <= totalPages) {
+      setCurrentPage(pageNumber);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  };
+
+  const getPageNumbers = () => {
+    const pages = [];
+    for (let i = 1; i <= totalPages; i++) {
+      pages.push(i);
+    }
+    return pages;
+  };
+
+  // --- Application Handler ---
+  const handleApplyClick = (gig: Gig) => {
+    // Simulate capturing client data. In a real app, this would come from a user form or auth.
+    const clientDetails = {
+      username: "client_user_123",
+      email: "client@example.com",
+      appliedAt: new Date().toISOString(),
+    };
+
+    console.log(`Application submitted for Gig: "${gig.title}"`);
+    console.log("Client Details:", clientDetails);
+
+    // In a real application, you would save this to your database, e.g., Firestore
+    // saveApplicationToFirestore(gig.id, clientDetails);
+
+    setSuccessMessage("Gig applied successfully!");
+
+    setTimeout(() => {
+      setSuccessMessage(null);
+    }, 3000);
+  };
 
   return (
-    <main className="min-h-screen bg-gray-50 py-12">
-      <div className="container mx-auto px-4 md:px-6">
-        <header className="mb-10 text-center">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">
-            Find Your Next Gig
-          </h1>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Explore thousands of gigs tailored to your skills and preferences.
-          </p>
-        </header>
+    <div className="container mx-auto p-4 sm:p-8">
+      <h1 className="text-5xl font-extrabold text-center mb-8 bg-gradient-to-l from-red-700 to-purple-800 bg-clip-text text-transparent">
+        Available Gigs
+      </h1>
 
-        <div className="relative mb-8 max-w-2xl mx-auto">
-          <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-          <Input
-            type="text"
-            placeholder="Search for a gig title or keyword..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-12 pr-4 py-6 text-lg rounded-full border-2 border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+      {/* Success Notification */}
+      {successMessage && (
+        <div className="fixed top-6 left-1/2 transform -translate-x-1/2 px-6 py-3 bg-[#76c482] text-white rounded-full shadow-lg z-50 animate-fade-in-down">
+          {successMessage}
+        </div>
+      )}
+      <style jsx global>{`
+        @keyframes fade-in-down {
+          0% {
+            opacity: 0;
+            transform: translate(-50%, -20px);
+          }
+          100% {
+            opacity: 1;
+            transform: translate(-50%, 0);
+          }
+        }
+        .animate-fade-in-down {
+          animation: fade-in-down 0.5s ease-out forwards;
+        }
+      `}</style>
+
+      {/* Search and Filter Section */}
+      <div className="flex flex-col md:flex-row md:space-x-4 mb-8 space-y-4 md:space-y-0">
+        <input
+          type="text"
+          placeholder="Search for gigs..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="flex-1 p-3 shadow-lg rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm font-semibold bg-slate-100"
+        />
+
+        <select
+          value={selectedProfession}
+          onChange={(e) => setSelectedProfession(e.target.value)}
+          className="p-3 shadow-lg bg-slate-100 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm font-semibold"
+        >
+          <option value="All" className="text-sm font-semibold">
+            All Professions
+          </option>
+          {Array.from(new Set(gigsData.map((gig) => gig.profession))).map(
+            (prof) => (
+              <option
+                key={prof}
+                value={prof}
+                className="text-sm font-semibold p-2 border-none rounded-full"
+              >
+                {prof}
+              </option>
+            )
+          )}
+        </select>
+
+        <div className="flex items-center space-x-2">
+          <label className="text-gray-600 font-bold text-sm">Price:</label>
+          <input
+            type="number"
+            placeholder="Min"
+            value={priceRange.min}
+            onChange={(e) =>
+              setPriceRange({ ...priceRange, min: Number(e.target.value) })
+            }
+            className="w-24 p-2 shadow-lg bg-slate-100 text-sm font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+          />
+          <span className="text-gray-500 font-bold">-</span>
+          <input
+            type="number"
+            placeholder="Max"
+            value={priceRange.max}
+            onChange={(e) =>
+              setPriceRange({ ...priceRange, max: Number(e.target.value) })
+            }
+            className="w-24 p-2 shadow-lg bg-slate-100 text-sm font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
           />
         </div>
-
-        <div className="flex flex-col md:flex-row gap-8">
-          <aside className="w-full md:w-1/4 p-6 bg-white rounded-xl shadow-lg h-fit sticky top-8">
-            <h2 className="text-xl font-semibold mb-6 text-gray-800">
-              Filter Options
-            </h2>
-
-            <div className="mb-6">
-              <h3 className="font-medium text-gray-700 mb-3 flex items-center gap-2">
-                <TagIcon className="h-4 w-4 text-gray-500" /> Gig Type
-              </h3>
-              <div className="flex flex-wrap gap-2">
-                {[
-                  "ALL",
-                  "WEB_DEV",
-                  "MOBILE_DEV",
-                  "GRAPHIC_DESIGN",
-                  "WRITING",
-                  "VIDEO_EDITING",
-                  "OTHER",
-                ].map((type) => (
-                  <Button
-                    key={type}
-                    variant={selectedType === type ? "default" : "outline"}
-                    onClick={() => setSelectedType(type)}
-                    className="rounded-full px-4 text-sm"
-                  >
-                    {type
-                      .split("_")
-                      .map(
-                        (word) => word.charAt(0) + word.slice(1).toLowerCase()
-                      )
-                      .join(" ")}
-                  </Button>
-                ))}
-              </div>
-            </div>
-
-            <div className="mb-6">
-              <h3 className="font-medium text-gray-700 mb-4 flex items-center gap-2">
-                <ChevronDownIcon className="h-4 w-4 text-gray-500 rotate-90" />{" "}
-                Price Range (KSh)
-              </h3>
-              <div className="flex items-center justify-between mb-4 text-sm text-gray-600">
-                <span>{priceRange[0]}</span>
-                <span>{priceRange[1]}</span>
-              </div>
-              <Slider
-                defaultValue={[0, 1000]}
-                max={10000}
-                step={10}
-                onValueChange={(value) => setPriceRange([value[0], value[1]])}
-                className="w-full"
-              />
-            </div>
-          </aside>
-
-          <section className="w-full md:w-3/4">
-            {loading ? (
-              <div className="flex justify-center items-center h-64">
-                <Loader2 className="h-12 w-12 animate-spin text-gray-400" />
-              </div>
-            ) : gigs.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {gigs.map((gig) => (
-                  <GigCard
-                    key={gig.id}
-                    id={gig.id}
-                    title={gig.title}
-                    description={gig.description}
-                    location={gig.location}
-                    price={gig.price}
-                    imageUrl={gig.image || ""} // Pass the image URL, or an empty string if none exists
-                  />
-                ))}
-              </div>
-            ) : (
-              <div className="text-center p-12 bg-gray-100 rounded-xl shadow-inner">
-                <p className="text-xl text-gray-600 font-medium">
-                  No gigs found matching your criteria.
-                </p>
-              </div>
-            )}
-          </section>
-        </div>
       </div>
-    </main>
+
+      {/* Gigs Display Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-6">
+        {gigsToDisplay.length > 0 ? (
+          gigsToDisplay.map((gig) => (
+            <GigCard key={gig.id} gig={gig} onApply={handleApplyClick} />
+          ))
+        ) : (
+          <p className="col-span-full bg-green-800 text-center text-xl font-extrabold text-red-500 p-20 rounded-md flex justify-center align-center self-center">
+            No gigs found matching your search!
+          </p>
+        )}
+      </div>
+
+      {/* --- Pagination Controls --- */}
+      {totalPages > 1 && (
+        <div className="flex justify-center items-center mt-12 space-x-2">
+          <button
+            onClick={() => handlePageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+            className={`px-4 py-2 rounded-lg font-semibold transition-colors duration-200 ${
+              currentPage === 1
+                ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+                : "bg-gray-300 text-gray-800 hover:bg-gray-400"
+            }`}
+          >
+            Previous
+          </button>
+
+          {getPageNumbers().map((pageNumber) => (
+            <button
+              key={pageNumber}
+              onClick={() => handlePageChange(pageNumber)}
+              className={`px-4 py-2 rounded-lg font-semibold transition-colors duration-200 ${
+                pageNumber === currentPage
+                  ? "bg-[#32D74B] text-white"
+                  : "bg-gray-200 text-gray-800 hover:bg-gray-300"
+              }`}
+            >
+              {pageNumber}
+            </button>
+          ))}
+
+          <button
+            onClick={() => handlePageChange(currentPage + 1)}
+            disabled={currentPage === totalPages}
+            className={`px-4 py-2 rounded-lg font-semibold transition-colors duration-200 ${
+              currentPage === totalPages
+                ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+                : "bg-gray-300 text-gray-800 hover:bg-gray-400"
+            }`}
+          >
+            Next
+          </button>
+        </div>
+      )}
+    </div>
   );
-}
+};
+
+export default Home;

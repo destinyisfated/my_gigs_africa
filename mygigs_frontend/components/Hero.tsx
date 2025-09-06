@@ -4,9 +4,6 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { SignedIn, SignedOut, SignInButton } from "@clerk/nextjs";
 
-// IMPORTANT: Place your hero image in the public directory and update the path.
-// For example: /public/hero-image.jpg
-// If your file is called 'hero-image.jpg' in the public folder, the path is '/hero-image.jpg'
 import heroImage from "../public/hero-image.jpg";
 import { JoinModal } from "./JoinModal";
 

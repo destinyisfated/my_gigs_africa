@@ -17,11 +17,11 @@ import {
   SignInButton,
 } from "@clerk/nextjs";
 
-import { Briefcase } from "lucide-react";
+import { Briefcase, Menu } from "lucide-react";
 
 export function Navbar() {
   return (
-    <header className="sticky top-0 z-50 w-ful bg-white-900 text-slate-800 shadow-md justify-around align-center flex p-1 bg-amber-50">
+    <header className="sticky top-0 z-50 w-full bg-white text-slate-800 shadow-md justify-around align-center flex p-1 bg-amber-50">
       <div className="container flex h-14 items-center">
         {/* Desktop Navigation */}
 
@@ -39,7 +39,7 @@ export function Navbar() {
           <div className="flex items-center space-x-6">
             {" "}
             <Link
-              href="/post-gig"
+              href="/gigs"
               className="md:mr-10 transition-colors text-slate font-bold hover:text-slate-800"
             >
               View Gigs
@@ -103,29 +103,32 @@ export function Navbar() {
             <Sheet>
               <SheetTrigger asChild>
                 <Button
-                  variant="ghost"
+                  variant="secondary"
                   size="icon"
-                  className="h-9 w-9 text-slate-800 hover:bg-gray-500 text-shadow-indigo-300 cursor-pointer"
+                  className="h-9 w-9 bg-gray-400 text-slate-800 hover:bg-gray-300 text-shadow-indigo-300 cursor-pointer"
                 >
-                  <span className="sr-only font-bold">Toggle menu</span>
+                  <Menu className="h-8 w-8 font-bold" />
                 </Button>
               </SheetTrigger>
               <SheetContent
                 side="right"
-                className="bg-slate-100 text-slate-500 text-center align-center"
+                className="bg-gradient-to-b from-[#0a0a35] to-[#383842] text-slate-500 text-center align-center"
               >
                 <SheetHeader>
-                  <SheetTitle className="text-slate-800 text-bold">
+                  <SheetTitle className="text-slate-400 font-extrabold text-3xl mt-10">
                     MyGigsAfrica
                   </SheetTitle>
                 </SheetHeader>
-                <nav className="grid gap-6 text-lg font-medium pt-8">
-                  <Link href="/post-gig" className="hover:text-gray-400">
+                <nav className="grid gap-6 text-md font-bold p-8">
+                  <Link
+                    href="/post-gig"
+                    className="hover:text-gray-400 text-slate-300 bg-gradient-to-l from-red-400 to-blue-950 p-5 rounded-md"
+                  >
                     View Gigs
                   </Link>
                   <Link
                     href="/become-freelancer"
-                    className="hover:text-gray-400"
+                    className="hover:text-gray-400 bg-slate-400 text-slate-300 bg-gradient-to-r from-red-400 to-blue-950 p-5 rounded-md"
                   >
                     Become a Freelancer
                   </Link>
