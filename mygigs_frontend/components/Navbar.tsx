@@ -50,6 +50,12 @@ export function Navbar() {
             >
               Become a Freelancer
             </Link>
+            <Link
+              href="/payment"
+              className="transition-colors text-slate font-bold hover:text-slate-800"
+            >
+              Make a Payment
+            </Link>
           </div>
 
           <div>
