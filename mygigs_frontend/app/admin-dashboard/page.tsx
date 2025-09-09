@@ -19,12 +19,12 @@ const Dashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState("Dashboard");
 
   // Mock data for sections
-  const totalUsers = 16815;
-  const freelancers = 2023;
-  const totalRevenue = 23902;
-  const totalGigs = 1457;
-  const revenueData = [8000, 6000, 9000, 7000, 5000, 10000]; // Jan to Jun
-  const communityGrowth = 65;
+  const totalUsers = 0;
+  const freelancers = 0;
+  const totalRevenue = 0;
+  const totalGigs = 0;
+  const revenueData = [0, 0, 0, 0, 0, 0]; // Jan to Jun
+  const communityGrowth = 0;
 
   const freelancerList = [
     {
@@ -34,26 +34,10 @@ const Dashboard: React.FC = () => {
       rating: 4.8,
       gigsCompleted: 45,
     },
-    {
-      id: 2,
-      name: "Jane Smith",
-      skills: "Graphic Design, Photoshop",
-      rating: 4.9,
-      gigsCompleted: 32,
-    },
-    {
-      id: 3,
-      name: "Alex Johnson",
-      skills: "Content Writing, SEO",
-      rating: 4.7,
-      gigsCompleted: 28,
-    },
   ];
 
   const clientList = [
     { id: 1, name: "Company A", projectsPosted: 12, totalSpent: 4500 },
-    { id: 2, name: "Company B", projectsPosted: 8, totalSpent: 3200 },
-    { id: 3, name: "Company C", projectsPosted: 15, totalSpent: 5600 },
   ];
 
   const gigList = [
@@ -62,20 +46,6 @@ const Dashboard: React.FC = () => {
       title: "Build a React App",
       freelancer: "John Doe",
       price: 500,
-      status: "Active",
-    },
-    {
-      id: 2,
-      title: "Logo Design",
-      freelancer: "Jane Smith",
-      price: 200,
-      status: "Completed",
-    },
-    {
-      id: 3,
-      title: "SEO Optimization",
-      freelancer: "Alex Johnson",
-      price: 300,
       status: "Active",
     },
   ];
@@ -150,18 +120,18 @@ const Dashboard: React.FC = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <div className="bg-gradient-to-br from-blue-700 to-gray-800 text-white p-6 rounded-lg shadow-lg hover:shadow-xl transition">
                 <h3 className="text-xl font-bold">Total Revenue</h3>
-                <p className="text-4xl">${totalRevenue.toLocaleString()}</p>
-                <p className="text-green-200">+4.2% from last month</p>
+                <p className="text-4xl">KES{totalRevenue.toLocaleString()}</p>
+                <p className="text-green-200">+0 from last month</p>
               </div>
               <div className="bg-gradient-to-br from-gray-700 to-gray-900 text-white p-6 rounded-lg shadow-lg hover:shadow-xl transition">
                 <h3 className="text-xl font-bold">Total Users</h3>
                 <p className="text-4xl">{totalUsers.toLocaleString()}</p>
-                <p className="text-green-200">+1.7% from last month</p>
+                <p className="text-green-200">+0 from last month</p>
               </div>
               <div className="bg-gradient-to-br from-gray-700 to-gray-900 text-white p-6 rounded-lg shadow-lg hover:shadow-xl transition">
                 <h3 className="text-xl font-bold">Freelancers</h3>
                 <p className="text-4xl">{freelancers.toLocaleString()}</p>
-                <p className="text-red-200">-2.9% from last month</p>
+                <p className="text-red-200">+2.9% from last month</p>
               </div>
               <div className="bg-gradient-to-br from-blue-700 to-gray-800 text-white p-6 rounded-lg shadow-lg hover:shadow-xl transition">
                 <h3 className="text-xl font-bold">Total Gigs</h3>

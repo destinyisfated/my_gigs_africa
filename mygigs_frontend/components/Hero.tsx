@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { SignedIn, SignedOut, SignInButton } from "@clerk/nextjs";
 
 import heroImage from "../public/hero-image.jpg";
-import { JoinModal } from "./JoinModal";
+import JoinModal from "./JoinModal";
 
 export function Hero() {
   return (

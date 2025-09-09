@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useState } from "react";
 import {
   Plus,
@@ -11,32 +11,54 @@ import {
   Users,
   Eye,
   MessageSquare,
-  Calendar,
+  Clock,
   TrendingUp,
   Briefcase,
-  Star,
-  Clock,
+  ArrowLeft,
 } from "lucide-react";
 
-interface FreelancerDashboardProps {
-  onCreateGig: () => void;
-}
+// The main App component that handles page navigation
+const App = () => {
+  const [currentPage, setCurrentPage] = useState("dashboard");
 
-const FreelancerDashboard = ({ onCreateGig }: FreelancerDashboardProps) => {
+  const handleCreateGigClick = () => {
+    setCurrentPage("createGig");
+  };
+
+  const handleBackToDashboard = () => {
+    setCurrentPage("dashboard");
+  };
+
+  return (
+    <div
+      className="min-h-screen bg-slate-50 text-slate-900 font-sans antialiased"
+      style={{ fontFamily: "'Quicksand', sans-serif" }}
+    >
+      {currentPage === "dashboard" ? (
+        <FreelancerDashboard onCreateGig={handleCreateGigClick} />
+      ) : (
+        <CreateGigPage onBack={handleBackToDashboard} />
+      )}
+    </div>
+  );
+};
+
+// Original FreelancerDashboard component
+const FreelancerDashboard = ({ onCreateGig }) => {
   const [activeTab, setActiveTab] = useState("overview");
 
   // Mock data - in real app, this would come from your backend
   const stats = {
-    totalEarnings: 12500,
-    activeGigs: 8,
-    totalClients: 45,
-    completionRate: 98,
+    totalEarnings: 125000,
+    activeGigs: 3,
+    totalClients: 5,
+    completionRate: 95,
   };
 
   const recentApplications = [
     {
       id: 1,
-      clientName: "Sarah Johnson",
+      clientName: "Team Allegiance",
       gigTitle: "E-commerce Website Development",
       appliedAt: "2 hours ago",
       budget: "KES 25,000",
@@ -46,65 +68,44 @@ const FreelancerDashboard = ({ onCreateGig }: FreelancerDashboardProps) => {
     },
     {
       id: 2,
-      clientName: "Michael Chen",
+      clientName: "Fin-Tech Solutions",
       gigTitle: "Mobile App UI/UX Design",
       appliedAt: "1 day ago",
-      budget: "KES 18,000",
-      status: "in-progress",
-      message:
-        "I need a mobile app design for a fintech startup. Timeline is flexible and budget is negotiable.",
-    },
-    {
-      id: 3,
-      clientName: "David Ochieng",
-      gigTitle: "Brand Identity Package",
-      appliedAt: "3 days ago",
-      budget: "KES 32,000",
-      status: "completed",
-      message:
-        "Looking for a complete brand identity including logo, business cards, and style guide.",
-    },
-    {
-      id: 4,
-      clientName: "Grace Mwangi",
-      gigTitle: "Website Redesign",
-      appliedAt: "5 hours ago",
       budget: "KES 15,000",
       status: "pending",
       message:
-        "Need to redesign my existing website to make it more modern and mobile-friendly.",
-    },
-    {
-      id: 5,
-      clientName: "James Kiprotich",
-      gigTitle: "React Native App",
-      appliedAt: "1 week ago",
-      budget: "KES 45,000",
-      status: "in-progress",
-      message:
-        "Building a delivery app for local restaurants. Need both iOS and Android versions.",
+        "We need a modern, intuitive design for our new financial application. Your aesthetic would be a perfect fit.",
     },
   ];
 
   const myGigs = [
     {
       id: 1,
-      title: "Full Stack Web Development",
+      title: "E-commerce Website Development",
       description:
         "I'll build modern, responsive websites using React and Node.js",
-      price: "$50/hour",
+      price: "KES 20,000",
       views: 234,
       applications: 12,
       status: "active",
     },
     {
       id: 2,
-      title: "Mobile App Development",
-      description: "Native iOS and Android app development with React Native",
-      price: "$60/hour",
-      views: 189,
+      title: "Custom CRM System",
+      description: "I will design and develop a custom CRM tailored to your business needs.",
+      price: "KES 50,000",
+      views: 56,
+      applications: 3,
+      status: "in-progress",
+    },
+    {
+      id: 3,
+      title: "Blog Platform with CMS",
+      description: "A fully functional blog with a user-friendly Content Management System.",
+      price: "KES 15,000",
+      views: 120,
       applications: 8,
-      status: "active",
+      status: "completed",
     },
   ];
 
@@ -122,24 +123,18 @@ const FreelancerDashboard = ({ onCreateGig }: FreelancerDashboardProps) => {
   };
 
   return (
-    <div
-      className="min-h-screen bg-slate-50 text-slate-900 font-sans antialiased"
-      style={{ fontFamily: "'Quicksand', sans-serif" }}
-    >
+    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans antialiased">
       {/* Header */}
-      <div className="bg-white shadow-md border-b border-slate-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div className="bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-3">
+          <div className="flex justify-between items-start md:items-center gap-4">
             <div>
-              <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900">
-                Freelancer Dashboard
+              <h1 className="text-2xl sm:text-4xl font-extrabold bg-gradient-to-l from-red-700 to-purple-800 bg-clip-text text-transparent">
+                James, Dashboard
               </h1>
-              <p className="text-slate-600 mt-1 font-medium text-sm sm:text-base">
-                Manage your gigs and client relationships with ease.
-              </p>
             </div>
             <Button
-              className="bg-gradient-to-br from-purple-600 to-blue-500 hover:from-purple-700 hover:to-blue-600 text-white font-bold py-2 px-6 rounded-full shadow-lg transform transition-transform duration-200 hover:scale-105"
+              className="bg-gradient-to-br from-purple-700 to-green-500 hover:from-green-700 hover:to-blue-600 text-white font-bold py-2 px-6 rounded-md shadow-md transform transition-transform duration-200 hover:scale-105 cursor-pointer"
               onClick={onCreateGig}
             >
               <Plus className="w-4 h-4 mr-2" />
@@ -471,4 +466,102 @@ const FreelancerDashboard = ({ onCreateGig }: FreelancerDashboardProps) => {
   );
 };
 
-export default FreelancerDashboard;
+// New page for creating a new gig
+const CreateGigPage = ({ onBack }) => {
+  const [gigData, setGigData] = useState({
+    title: "",
+    description: "",
+    price: "",
+  });
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setGigData((prevData) => ({ ...prevData, [name]: value }));
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    console.log("New Gig Data:", gigData);
+    // In a real application, you would send this data to a backend.
+    // For now, we'll just log it and navigate back.
+    onBack();
+  };
+
+  return (
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      <div className="flex items-center gap-4 mb-8">
+        <Button onClick={onBack} className="bg-slate-200 text-slate-900 font-semibold hover:bg-slate-300 border border-slate-300 transition-colors duration-200">
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Back to Dashboard
+        </Button>
+        <h1 className="text-2xl sm:text-4xl font-extrabold bg-gradient-to-l from-red-700 to-purple-800 bg-clip-text text-transparent">
+          Create a New Gig
+        </h1>
+      </div>
+
+      <Card className="bg-white border border-slate-200 rounded-xl shadow-md p-6">
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div>
+            <label
+              htmlFor="title"
+              className="block text-sm font-medium text-slate-700"
+            >
+              Gig Title
+            </label>
+            <input
+              type="text"
+              id="title"
+              name="title"
+              value={gigData.title}
+              onChange={handleChange}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500 sm:text-sm p-2"
+              required
+            />
+          </div>
+          <div>
+            <label
+              htmlFor="description"
+              className="block text-sm font-medium text-slate-700"
+            >
+              Description
+            </label>
+            <textarea
+              id="description"
+              name="description"
+              rows="4"
+              value={gigData.description}
+              onChange={handleChange}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500 sm:text-sm p-2"
+              required
+            ></textarea>
+          </div>
+          <div>
+            <label
+              htmlFor="price"
+              className="block text-sm font-medium text-slate-700"
+            >
+              Price (KES)
+            </label>
+            <input
+              type="number"
+              id="price"
+              name="price"
+              value={gigData.price}
+              onChange={handleChange}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500 sm:text-sm p-2"
+              required
+            />
+          </div>
+          <Button
+            type="submit"
+            className="w-full bg-gradient-to-br from-purple-700 to-green-500 hover:from-green-700 hover:to-blue-600 text-white font-bold py-2 px-6 rounded-md shadow-md transform transition-transform duration-200 hover:scale-105"
+          >
+            Save Gig
+          </Button>
+        </form>
+      </Card>
+    </div>
+  );
+};
+
+export default App;

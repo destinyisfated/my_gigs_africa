@@ -22,16 +22,6 @@
       "@/*": ["./*"]
     }
   },
-<<<<<<< HEAD
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "app/payment/page.jsx"],
-=======
-  "include": [
-    "next-env.d.ts",
-    "**/*.ts",
-    "**/*.tsx",
-    ".next/types/**/*.ts",
-    "app/freelancer-dashboard"
-  ],
->>>>>>> 3b7e1aa41057207481734dbd9be9ebe727eba433
   "exclude": ["node_modules"]
 }

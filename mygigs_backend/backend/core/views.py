@@ -200,12 +200,22 @@ class MpesaTransactionListAPIView(ListAPIView):
 class MpesaTransactionStatusAPIView(APIView):
     def get(self, request, checkout_request_id, *args, **kwargs):
         try:
-            transaction = MpesaTransaction.objects.get(CheckoutRequestID=checkout_request_id)
-            if transaction.ResultCode == "0":
+            # Find the transaction by its CheckoutRequestID
+            mpesa_transaction = MpesaTransaction.objects.get(checkout_request_id=checkout_request_id)
+            
+            # Return the status based on the ResultCode
+            if mpesa_transaction.result_code == "0":
                 return Response({"status": "success"}, status=status.HTTP_200_OK)
-            elif transaction.ResultCode is not None:
+            elif mpesa_transaction.result_code:
+                # If there is a ResultCode, but it's not "0", it's a failure
                 return Response({"status": "failed"}, status=status.HTTP_200_OK)
             else:
+                # Still pending if no ResultCode is available
                 return Response({"status": "pending"}, status=status.HTTP_200_OK)
+        
         except MpesaTransaction.DoesNotExist:
-            return Response({"status": "not_found"}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"status": "pending"}, status=status.HTTP_200_OK)
+        except Exception as e:
+            # Catch-all for any other unexpected error
+            print(f"Error checking transaction status for ID {checkout_request_id}: {e}")
+            return Response({"status": "error", "message": "An internal server error occurred."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

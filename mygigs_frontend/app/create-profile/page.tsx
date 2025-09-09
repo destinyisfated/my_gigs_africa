@@ -3,22 +3,8 @@
 import { useState } from "react";
 import { ChevronDown, X, User } from "lucide-react";
 
-const DashboardPage = () => {
-  return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 p-4 text-center">
-      <h1 className="text-4xl font-bold text-gray-800">
-        Welcome to your Dashboard!
-      </h1>
-      <p className="mt-4 text-lg text-gray-600">
-        Your profile has been successfully created.
-      </p>
-    </div>
-  );
-};
-
 const Page = () => {
-  const [currentPage, setCurrentPage] = useState("form");
-
+  // State for form fields
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [professionalTitle, setProfessionalTitle] = useState("");
@@ -34,6 +20,9 @@ const Page = () => {
   const [contactPhone, setContactPhone] = useState("");
   const [portfolio, setPortfolio] = useState("");
 
+  // New state for the profile photo
+  const [profilePhoto, setProfilePhoto] = useState(null);
+
   const handleAddSkill = () => {
     if (skillInput.trim() !== "" && !skills.includes(skillInput.trim())) {
       setSkills([...skills, skillInput.trim()]);
@@ -43,6 +32,14 @@ const Page = () => {
 
   const handleRemoveSkill = (skillToRemove) => {
     setSkills(skills.filter((skill) => skill !== skillToRemove));
+  };
+
+  // Function to handle file upload and preview
+  const handlePhotoUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setProfilePhoto(URL.createObjectURL(file));
+    }
   };
 
   const handleSubmit = (e) => {
@@ -61,18 +58,17 @@ const Page = () => {
       location,
       contactPhone,
       portfolio,
+      profilePhoto,
     });
-    // Change state to show the dashboard page
-    setCurrentPage("dashboard");
+    // Redirect to the dashboard page after form submission.
+    // Using window.location.href is a standard way to redirect in environments where Next.js router is not available.
+    window.location.href = '/freelancer-dashboard';
   };
-
-  if (currentPage === "dashboard") {
-    return <DashboardPage />;
-  }
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 p-4">
-      <style jsx global>{`
+      <style>
+        {`
         @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
         body {
           font-family: "Inter", sans-serif;
@@ -85,7 +81,8 @@ const Page = () => {
           -moz-appearance: none;
           appearance: none;
         }
-      `}</style>
+      `}
+      </style>
 
       <div className="w-full max-w-2xl mx-auto space-y-8 bg-white p-8 rounded-xl shadow-lg border border-gray-200">
         <form onSubmit={handleSubmit} className="space-y-8">
@@ -96,51 +93,29 @@ const Page = () => {
               Personal Information
             </h2>
             <div className="flex items-center gap-6 mb-6">
-              <div className="w-20 h-20 bg-gray-200 rounded-full flex items-center justify-center text-gray-400">
-                <User size={40} />
+              <div className="w-20 h-20 bg-gray-200 rounded-full flex items-center justify-center text-gray-400 overflow-hidden">
+                {profilePhoto ? (
+                  <img src={profilePhoto} alt="Profile" className="w-full h-full object-cover" />
+                ) : (
+                  <User size={40} />
+                )}
               </div>
-              <button
-                type="button"
-                className="bg-white hover:bg-gray-100 text-gray-800 font-semibold py-2 px-4 rounded-md border border-gray-300 transition-colors duration-200"
-              >
-                Upload Photo
-              </button>
+              <label htmlFor="photo-upload" className="cursor-pointer">
+                <input
+                  type="file"
+                  id="photo-upload"
+                  className="hidden"
+                  accept="image/*"
+                  onChange={handlePhotoUpload}
+                />
+                <div
+                  className="bg-white hover:bg-gray-100 text-gray-800 font-semibold py-2 px-4 rounded-md border border-gray-300 transition-colors duration-200"
+                >
+                  Upload Photo
+                </div>
+              </label>
             </div>
             <div className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label
-                    htmlFor="firstName"
-                    className="block text-sm font-medium text-gray-700 mb-1"
-                  >
-                    First Name
-                  </label>
-                  <input
-                    type="text"
-                    id="firstName"
-                    placeholder="John"
-                    value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-orange-500 mt-1"
-                  />
-                </div>
-                <div>
-                  <label
-                    htmlFor="lastName"
-                    className="block text-sm font-medium text-gray-700 mb-1"
-                  >
-                    Last Name
-                  </label>
-                  <input
-                    type="text"
-                    id="lastName"
-                    placeholder="Doe"
-                    value={lastName}
-                    onChange={(e) => setLastName(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-orange-500 mt-1"
-                  />
-                </div>
-              </div>
               <div>
                 <label
                   htmlFor="professionalTitle"
@@ -286,23 +261,7 @@ const Page = () => {
                   <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
                 </div>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label
-                    htmlFor="hourlyRate"
-                    className="block text-sm font-medium text-gray-700 mb-1"
-                  >
-                    Hourly Rate (USD)
-                  </label>
-                  <input
-                    type="number"
-                    id="hourlyRate"
-                    placeholder="25"
-                    value={hourlyRate}
-                    onChange={(e) => setHourlyRate(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-orange-500 mt-1"
-                  />
-                </div>
+              <div>
                 <div>
                   <label
                     htmlFor="availability"
