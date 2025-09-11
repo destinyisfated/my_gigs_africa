@@ -6,9 +6,9 @@ from rest_framework.response import Response
 from rest_framework import status
 import requests
 from requests.auth import HTTPBasicAuth
-from .models import MpesaTransaction
+from .models import MpesaTransaction, Gig
 from rest_framework.generics import ListAPIView
-from .serializers import MpesaTransactionSerializer
+from .serializers import MpesaTransactionSerializer, GigSerializer
 import base64
 
 def get_access_token():
@@ -219,3 +219,13 @@ class MpesaTransactionStatusAPIView(APIView):
             # Catch-all for any other unexpected error
             print(f"Error checking transaction status for ID {checkout_request_id}: {e}")
             return Response({"status": "error", "message": "An internal server error occurred."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class GigListAPIView(APIView):
+    def get(self, request, *args, **kwargs):
+        """
+        Retrieves all Gig objects and returns them as a JSON list.
+        """
+        gigs = Gig.objects.all()
+        serializer = GigSerializer(gigs, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)

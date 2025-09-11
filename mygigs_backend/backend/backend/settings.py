@@ -134,7 +134,8 @@ CORS_ALLOWED_ORIGINS = [
     
     # Add your production frontend URL here
 ]
-
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # M-Pesa Credentials from .env
 CONSUMER_KEY = config('CONSUMER_KEY')

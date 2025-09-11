@@ -1,6 +1,6 @@
 
 from rest_framework.serializers import ModelSerializer
-from .models import MpesaTransaction
+from .models import Gig, MpesaTransaction
 
 
 class MpesaTransactionSerializer(ModelSerializer):
@@ -10,3 +10,11 @@ class MpesaTransactionSerializer(ModelSerializer):
     class Meta:
         model = MpesaTransaction
         fields = '__all__'
+
+class GigSerializer(ModelSerializer):
+    """
+    Serializer to convert Gig model instances into a JSON representation.
+    """
+    class Meta:
+        model = Gig
+        fields = ['id', 'title', 'description', 'price', 'image']
