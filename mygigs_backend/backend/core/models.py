@@ -20,6 +20,8 @@ class MpesaTransaction(models.Model):
     # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    clerk_id = models.CharField(max_length=255, null=True, blank=True)
     
     def __str__(self):
         return f"Transaction {self.mpesa_receipt_number or self.merchant_request_id}"
@@ -56,3 +58,16 @@ class Gig(models.Model):
         return self.title
     def image_tag(self):
         return mark_safe('<img src="%s" width="80" />'% (self.image.url))
+
+class ClerkUser(models.Model):
+    # Store Clerk's user ID. It's a string, so use CharField.
+    clerk_id = models.CharField(max_length=255, unique=True, primary_key=True)
+    first_name = models.CharField(max_length=100, blank=True, null=True)
+    last_name = models.CharField(max_length=100, blank=True, null=True)
+    email = models.EmailField(unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    role = models.CharField(max_length=50, default='user')
+
+    def __str__(self):
+        return f"{self.first_name} {self.last_name} ({self.email})"

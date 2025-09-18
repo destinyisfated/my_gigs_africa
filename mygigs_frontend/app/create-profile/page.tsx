@@ -5,8 +5,6 @@ import { ChevronDown, X, User } from "lucide-react";
 
 const Page = () => {
   // State for form fields
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
   const [professionalTitle, setProfessionalTitle] = useState("");
   const [bio, setBio] = useState("");
   const [primaryCategory, setPrimaryCategory] = useState("");
@@ -14,7 +12,6 @@ const Page = () => {
   const [skillInput, setSkillInput] = useState("");
   const [skills, setSkills] = useState([]);
   const [yearsOfExperience, setYearsOfExperience] = useState("");
-  const [hourlyRate, setHourlyRate] = useState("");
   const [availability, setAvailability] = useState("");
   const [location, setLocation] = useState("");
   const [contactPhone, setContactPhone] = useState("");
@@ -45,15 +42,12 @@ const Page = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
     console.log("Freelancer Profile Submitted:", {
-      firstName,
-      lastName,
       professionalTitle,
       bio,
       primaryCategory,
       profession,
       skills,
       yearsOfExperience,
-      hourlyRate,
       availability,
       location,
       contactPhone,
@@ -62,7 +56,7 @@ const Page = () => {
     });
     // Redirect to the dashboard page after form submission.
     // Using window.location.href is a standard way to redirect in environments where Next.js router is not available.
-    window.location.href = '/freelancer-dashboard';
+    window.location.href = "/freelancer-dashboard";
   };
 
   return (
@@ -95,7 +89,11 @@ const Page = () => {
             <div className="flex items-center gap-6 mb-6">
               <div className="w-20 h-20 bg-gray-200 rounded-full flex items-center justify-center text-gray-400 overflow-hidden">
                 {profilePhoto ? (
-                  <img src={profilePhoto} alt="Profile" className="w-full h-full object-cover" />
+                  <img
+                    src={profilePhoto}
+                    alt="Profile"
+                    className="w-full h-full object-cover"
+                  />
                 ) : (
                   <User size={40} />
                 )}
@@ -108,9 +106,7 @@ const Page = () => {
                   accept="image/*"
                   onChange={handlePhotoUpload}
                 />
-                <div
-                  className="bg-white hover:bg-gray-100 text-gray-800 font-semibold py-2 px-4 rounded-md border border-gray-300 transition-colors duration-200"
-                >
+                <div className="bg-white hover:bg-gray-100 text-gray-800 font-semibold py-2 px-4 rounded-md border border-gray-300 transition-colors duration-200">
                   Upload Photo
                 </div>
               </label>

@@ -1,6 +1,7 @@
 "use client";
 // components/admin/Dashboard.tsx
 import React, { useState } from "react";
+import { useUser } from "@clerk/nextjs";
 import {
   Home,
   Users,
@@ -15,7 +16,7 @@ import {
   Calendar,
 } from "lucide-react";
 
-const Dashboard: React.FC = () => {
+const Dashboard = () => {
   const [activeTab, setActiveTab] = useState("Dashboard");
 
   // Mock data for sections
@@ -60,6 +61,29 @@ const Dashboard: React.FC = () => {
     ],
   };
 
+  const { isLoaded, isSignedIn, user } = useUser();
+  if (!isLoaded) {
+    return <div>Loading...</div>;
+  }
+
+  // Get the user's role from public metadata
+  const userRole = user?.publicMetadata?.role;
+
+  // Protect the route: Only allow access for users with the 'admin' role
+  if (!isSignedIn || userRole !== "admin") {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
+        <div className="text-center p-8 bg-white rounded-lg shadow-xl">
+          <h1 className="text-4xl font-bold text-red-500">Access Denied</h1>
+          <p className="mt-4 text-gray-700">
+            You do not have permission to view this page. If you believe this is
+            an error, please contact support.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   const sidebarItems = [
     { name: "Dashboard", icon: Home },
     { name: "Freelancers", icon: Users },
@@ -76,7 +100,7 @@ const Dashboard: React.FC = () => {
             {/* Header */}
             <div className="flex flex-col md:flex-row items-center justify-between gap-4">
               <h2 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-gray-800 to-gray-600">
-                Dashboard
+                Welcome {user.firstName || user.lastName}
               </h2>
               <div className="flex items-center space-x-4 w-full md:w-auto">
                 <div className="relative w-full">
@@ -393,7 +417,7 @@ const Dashboard: React.FC = () => {
   };
 
   return (
-    <div className="flex h-screen bg-gray-100 font-sans">
+    <div className="flex h-screen bg-gray-100 font-Quicksand">
       {/* Sidebar */}
       <aside className="w-64 bg-gradient-to-b from-gray-800 to-gray-900 text-white flex flex-col shadow-lg">
         <div className="p-6">

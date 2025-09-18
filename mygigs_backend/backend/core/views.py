@@ -3,13 +3,20 @@ from datetime import datetime
 from django.conf import settings
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework.response import Response
 from rest_framework import status
 import requests
 from requests.auth import HTTPBasicAuth
-from .models import MpesaTransaction, Gig
+from .models import MpesaTransaction, Gig, ClerkUser
 from rest_framework.generics import ListAPIView
 from .serializers import MpesaTransactionSerializer, GigSerializer
 import base64
+import json
+import os
+from django.views.decorators.csrf import csrf_exempt
+from svix.webhooks import Webhook, WebhookVerificationError
+from django.http import HttpResponse
+
 
 def get_access_token():
     """
@@ -51,6 +58,7 @@ class MpesaSTKPushAPIView(APIView):
                 {"error": "Could not get an M-Pesa access token."},
                 status=status.HTTP_503_SERVICE_UNAVAILABLE
             )
+        clerk_id = request.data.get('clerk_id')
 
         # 2. Validate incoming data from the frontend
         try:
@@ -104,7 +112,9 @@ class MpesaSTKPushAPIView(APIView):
                 merchant_request_id=response_data.get('MerchantRequestID'),
                 checkout_request_id=response_data.get('CheckoutRequestID'),
                 phone_number=phone_number,
-                amount=amount
+                amount=amount,
+                clerk_id=clerk_id
+
             )
             return Response(response_data, status=response.status_code)
 
@@ -161,6 +171,20 @@ class MpesaCallbackAPIView(APIView):
                 transaction.transaction_date = transaction_date
                 transaction.phone_number = phone_number
                 transaction.save()
+
+                clerk_id = transaction.clerk_id
+                print("clerk_id in callback:", clerk_id)
+                print("ClerkUser exists:", ClerkUser.objects.filter(clerk_id=clerk_id).exists())
+
+                if clerk_id:
+                    try:
+                        user = ClerkUser.objects.get(clerk_id=clerk_id)
+                        user.role = 'freelancer'  # or user.is_freelancer = True
+                        user.save()
+                        print(user.role)
+                        update_clerk_role_to_freelancer(clerk_id)
+                    except ClerkUser.DoesNotExist:
+                        print("User not found for clerk_id:", clerk_id)
                 
                 print(f"Successfully updated transaction: {mpesa_receipt_number}")
 
@@ -229,3 +253,85 @@ class GigListAPIView(APIView):
         gigs = Gig.objects.all()
         serializer = GigSerializer(gigs, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@csrf_exempt
+def clerk_webhook_handler(request):
+    print("Clerk webhook called")
+    # Get the webhook signing secret from your environment variables
+    # This secret is configured in your Clerk Dashboard
+    webhook_secret = settings.CLERK_WEBHOOK_SECRET
+
+    # Get webhook headers and payload from the request
+    headers = request.headers
+    payload = request.body.decode('utf-8')
+
+    try:
+        # Verify the webhook signature
+        wh = Webhook(webhook_secret)
+        evt = wh.verify(payload, headers)
+    except WebhookVerificationError:
+        print("Webhook verification failed.")
+        return HttpResponse(status=400)
+    
+    event_type = evt.get("type")
+    
+    # Handle user creation or update robustly with error handling
+    if event_type in ["user.created", "user.updated"]:
+        user_data = evt.get("data", {})
+        clerk_id = user_data.get("id")
+        email = user_data.get("email_addresses", [{}])[0].get("email_address")
+        first_name = user_data.get("first_name")
+        last_name = user_data.get("last_name")
+
+        try:
+            user, created = ClerkUser.objects.get_or_create(
+                clerk_id=clerk_id,
+                defaults={
+                    "first_name": first_name,
+                    "last_name": last_name,
+                    "email": email,
+                }
+            )
+            if not created:
+                # Update fields if user already exists
+                user.first_name = first_name
+                user.last_name = last_name
+                user.email = email
+                user.save()
+                print(f"User updated: {clerk_id}")
+            else:
+                print(f"User created: {clerk_id}")
+        except Exception as e:
+            print("Error in Clerk webhook user creation:", e)
+
+    # Handle user deletion
+    elif event_type == "user.deleted":
+        user_data = evt.get("data", {})
+        clerk_id = user_data.get("id")
+        ClerkUser.objects.filter(clerk_id=clerk_id).delete()
+        print(f"User deleted: {clerk_id}")
+
+    return HttpResponse(status=200)
+
+def update_clerk_role_to_freelancer(clerk_id):
+    CLERK_API_KEY = settings.CLERK_SECRET_KEY
+    if not CLERK_API_KEY:
+        print("CLERK_SECRET_KEY not set in environment.")
+        return
+
+    headers = {
+        "Authorization": f"Bearer {CLERK_API_KEY}",
+        "Content-Type": "application/json"
+    }
+    data = {
+        "public_metadata": {
+            "role": "freelancer"
+        }
+    }
+    resp = requests.patch(
+        f"https://api.clerk.com/v1/users/{clerk_id}",
+        headers=headers,
+        json=data
+    )
+    print(f"Clerk API response: {resp.status_code} {resp.text}")

@@ -17,4 +17,4 @@ class GigSerializer(ModelSerializer):
     """
     class Meta:
         model = Gig
-        fields = ['id', 'title', 'description', 'price', 'image']
+        fields = ['id', 'title', 'description', 'price', 'image', 'location']
