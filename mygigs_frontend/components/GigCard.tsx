@@ -1,8 +1,6 @@
-import Image from "next/image";
+// import Image from "next/image";
 import { MapPinIcon } from "@heroicons/react/24/solid";
-import { Gig } from "../data/gigsData";
 
-// Define the props for the GigCard component
 interface GigCardProps {
   gig: Gig;
   onApply: (gig: Gig) => void;
@@ -12,12 +10,19 @@ const GigCard: React.FC<GigCardProps> = ({ gig, onApply }) => {
   return (
     <div className="bg-white rounded-xl shadow-md overflow-hidden transform transition duration-300 hover:scale-105 hover:shadow-lg">
       <div className="relative w-full h-48">
-        <Image
-          src={gig.image}
-          alt={gig.title}
-          layout="fill"
-          objectFit="cover"
-        />
+        {gig.image ? (
+          <img
+            src={`http://localhost:8000${gig.image}`}
+            alt={gig.title}
+            layout="fill"
+            objectFit="cover"
+            className="object-fit"
+          />
+        ) : (
+          <div className="bg-gray-300 w-full h-full flex items-center justify-center text-gray-500">
+            No Image Available
+          </div>
+        )}
       </div>
       <div className="p-4 flex flex-col justify-between h-[calc(100%-12rem)]">
         <div>
@@ -32,6 +37,7 @@ const GigCard: React.FC<GigCardProps> = ({ gig, onApply }) => {
           <p className="text-sm text-gray-500 line-clamp-3 mb-4">
             {gig.description}
           </p>
+          {/* We'll remove the location display since the data is not available from the backend */}
           <div className="flex items-center text-gray-400 text-sm">
             <MapPinIcon className="h-4 w-4 mr-1" />
             <span>{gig.location}</span>

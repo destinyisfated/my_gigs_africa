@@ -27,7 +27,7 @@ SECRET_KEY = 'django-insecure-_k9-9pr5n@bh@25_nxz@1$v6qehyo2lis)uindv_ft&z=cp&$%
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost', 'f17cc7d57e25.ngrok-free.app']
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '6e600c9f5734.ngrok-free.app']
 
 
 # Application definition
@@ -146,3 +146,5 @@ PASSKEY = config('PASSKEY')
 # URL for the callback from M-Pesa
 # For local development, use a tool like Ngrok to expose your local server
 MPESA_CALLBACK_URL = config('MPESA_CALLBACK_URL')
+CLERK_WEBHOOK_SECRET = config('CLERK_WEBHOOK_SECRET')
+CLERK_SECRET_KEY = config('CLERK_SECRET_KEY')

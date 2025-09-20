@@ -1,15 +1,16 @@
 "use client";
 
 import GigCard from "@/components/GigCard";
-import { gigsData } from "@/data/gigsData";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 
 const Home = () => {
-  const [gigs, setGigs] = useState<Gig[]>([]);
   const [filteredGigs, setFilteredGigs] = useState<Gig[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [selectedProfession, setSelectedProfession] = useState<string>("All");
   const [priceRange, setPriceRange] = useState({ min: 0, max: 1500 });
+  const [allProfessions, setAllProfessions] = useState<string[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
   // --- Pagination State ---
   const [currentPage, setCurrentPage] = useState<number>(1);
@@ -18,28 +19,45 @@ const Home = () => {
   // --- Notification State ---
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
+  // Function to fetch gigs from the backend with filters
+  const fetchGigs = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const params = new URLSearchParams({
+        search: searchQuery,
+        profession: selectedProfession,
+        min_price: priceRange.min.toString(),
+        max_price: priceRange.max.toString(),
+      }).toString();
+
+      const response = await fetch(
+        `http://127.0.0.1:8000/core/gigs/?${params}`
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch gigs from the backend");
+      }
+
+      const data: Gig[] = await response.json();
+      setFilteredGigs(data);
+
+      // Extract unique professions from the fetched data for the dropdown
+      const uniqueProfessions = Array.from(
+        new Set(data.map((gig) => gig.profession))
+      );
+      setAllProfessions(uniqueProfessions);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, [searchQuery, selectedProfession, priceRange]);
+
+  // Initial data load and re-fetching on filter changes
   useEffect(() => {
-    // Initial data load
-    setGigs(gigsData);
-  }, []);
-
-  useEffect(() => {
-    // This effect runs whenever filter states change
-    let updatedGigs = gigs.filter((gig) => {
-      const matchesSearch =
-        gig.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        gig.description.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesProfession =
-        selectedProfession === "All" || gig.profession === selectedProfession;
-      const matchesPrice =
-        gig.price >= priceRange.min && gig.price <= priceRange.max;
-
-      return matchesSearch && matchesProfession && matchesPrice;
-    });
-
-    setFilteredGigs(updatedGigs);
-    setCurrentPage(1); // Reset to the first page when filters change
-  }, [searchQuery, selectedProfession, priceRange, gigs]);
+    fetchGigs();
+  }, [fetchGigs]);
 
   // Calculate the gigs to be displayed on the current page
   const totalPages = Math.ceil(filteredGigs.length / perPage);
@@ -65,28 +83,15 @@ const Home = () => {
 
   // --- Application Handler ---
   const handleApplyClick = (gig: Gig) => {
-    // Simulate capturing client data. In a real app, this would come from a user form or auth.
-    const clientDetails = {
-      username: "client_user_123",
-      email: "client@example.com",
-      appliedAt: new Date().toISOString(),
-    };
-
     console.log(`Application submitted for Gig: "${gig.title}"`);
-    console.log("Client Details:", clientDetails);
-
-    // In a real application, you would save this to your database, e.g., Firestore
-    // saveApplicationToFirestore(gig.id, clientDetails);
-
     setSuccessMessage("Gig applied successfully!");
-
     setTimeout(() => {
       setSuccessMessage(null);
     }, 3000);
   };
 
   return (
-    <div className="container mx-auto p-4 sm:p-8">
+    <div className="container mx-auto p-4 sm:p-8 font-Quicksand">
       <h1 className="text-5xl font-extrabold text-center mb-8 bg-gradient-to-l from-red-700 to-purple-800 bg-clip-text text-transparent">
         Available Gigs
       </h1>
@@ -114,7 +119,7 @@ const Home = () => {
       `}</style>
 
       {/* Search and Filter Section */}
-      <div className="flex flex-col md:flex-row md:space-x-4 mb-8 space-y-4 md:space-y-0">
+      <div className="flex flex-col md:flex-row md:space-x-4 mb-8 space-y-4 md:space-y-0 font-Quicksand">
         <input
           type="text"
           placeholder="Search for gigs..."
@@ -131,17 +136,15 @@ const Home = () => {
           <option value="All" className="text-sm font-semibold">
             All Professions
           </option>
-          {Array.from(new Set(gigsData.map((gig) => gig.profession))).map(
-            (prof) => (
-              <option
-                key={prof}
-                value={prof}
-                className="text-sm font-semibold p-2 border-none rounded-full"
-              >
-                {prof}
-              </option>
-            )
-          )}
+          {allProfessions.map((prof) => (
+            <option
+              key={prof}
+              value={prof}
+              className="text-sm font-semibold p-2 border-none rounded-full"
+            >
+              {prof}
+            </option>
+          ))}
         </select>
 
         <div className="flex items-center space-x-2">
@@ -168,21 +171,35 @@ const Home = () => {
         </div>
       </div>
 
+      {loading && (
+        <p className="col-span-full text-center text-xl font-bold text-gray-700 p-20">
+          Loading gigs...
+        </p>
+      )}
+
+      {error && (
+        <p className="col-span-full text-center text-xl font-bold text-red-500 p-20">
+          Error: {error}
+        </p>
+      )}
+
       {/* Gigs Display Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-6">
-        {gigsToDisplay.length > 0 ? (
-          gigsToDisplay.map((gig) => (
-            <GigCard key={gig.id} gig={gig} onApply={handleApplyClick} />
-          ))
-        ) : (
-          <p className="col-span-full bg-green-800 text-center text-xl font-extrabold text-red-500 p-20 rounded-md flex justify-center align-center self-center">
-            No gigs found matching your search!
-          </p>
-        )}
-      </div>
+      {!loading && !error && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-6 font-Quicksand">
+          {gigsToDisplay.length > 0 ? (
+            gigsToDisplay.map((gig) => (
+              <GigCard key={gig.id} gig={gig} onApply={handleApplyClick} />
+            ))
+          ) : (
+            <p className="col-span-full bg-green-800 text-center text-xl font-extrabold text-red-500 p-20 rounded-md">
+              No gigs found matching your search!
+            </p>
+          )}
+        </div>
+      )}
 
       {/* --- Pagination Controls --- */}
-      {totalPages > 1 && (
+      {!loading && !error && totalPages > 1 && (
         <div className="flex justify-center items-center mt-12 space-x-2">
           <button
             onClick={() => handlePageChange(currentPage - 1)}

@@ -4,7 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { useState } from "react";
+import { use, useState } from "react";
+import { useUser } from "@clerk/nextjs";
 import {
   Plus,
   DollarSign,
@@ -28,12 +29,8 @@ const App = () => {
   const handleBackToDashboard = () => {
     setCurrentPage("dashboard");
   };
-
   return (
-    <div
-      className="min-h-screen bg-slate-50 text-slate-900 font-sans antialiased"
-      style={{ fontFamily: "'Quicksand', sans-serif" }}
-    >
+    <div className="min-h-screen bg-slate-50 text-slate-900">
       {currentPage === "dashboard" ? (
         <FreelancerDashboard onCreateGig={handleCreateGigClick} />
       ) : (
@@ -46,6 +43,14 @@ const App = () => {
 // Original FreelancerDashboard component
 const FreelancerDashboard = ({ onCreateGig }) => {
   const [activeTab, setActiveTab] = useState("overview");
+  const { isLoaded, isSignedIn, user } = useUser();
+  if (!isLoaded) {
+    return <div>Loading...</div>;
+  }
+
+  if (!isSignedIn) {
+    return <div>Not signed in</div>;
+  }
 
   // Mock data - in real app, this would come from your backend
   const stats = {
@@ -92,7 +97,8 @@ const FreelancerDashboard = ({ onCreateGig }) => {
     {
       id: 2,
       title: "Custom CRM System",
-      description: "I will design and develop a custom CRM tailored to your business needs.",
+      description:
+        "I will design and develop a custom CRM tailored to your business needs.",
       price: "KES 50,000",
       views: 56,
       applications: 3,
@@ -101,7 +107,8 @@ const FreelancerDashboard = ({ onCreateGig }) => {
     {
       id: 3,
       title: "Blog Platform with CMS",
-      description: "A fully functional blog with a user-friendly Content Management System.",
+      description:
+        "A fully functional blog with a user-friendly Content Management System.",
       price: "KES 15,000",
       views: 120,
       applications: 8,
@@ -123,14 +130,14 @@ const FreelancerDashboard = ({ onCreateGig }) => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans antialiased">
+    <div className="min-h-screen bg-slate-50 text-slate-900 font-Quicksand">
       {/* Header */}
       <div className="bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-3">
           <div className="flex justify-between items-start md:items-center gap-4">
             <div>
               <h1 className="text-2xl sm:text-4xl font-extrabold bg-gradient-to-l from-red-700 to-purple-800 bg-clip-text text-transparent">
-                James, Dashboard
+                Welcome: {user.firstName || user.lastName}
               </h1>
             </div>
             <Button
@@ -144,13 +151,13 @@ const FreelancerDashboard = ({ onCreateGig }) => {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-8 lg:px-8 py-10">
         <Tabs
           value={activeTab}
           onValueChange={setActiveTab}
           className="space-y-8"
         >
-          <TabsList className="grid w-full grid-cols-4 bg-slate-100 rounded-xl p-1 font-semibold">
+          <TabsList className="grid w-full grid-cols-3 bg-slate-100 rounded-xl p-1 font-semibold">
             <TabsTrigger
               value="overview"
               className="data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-md rounded-xl transition-all duration-300"
@@ -169,32 +176,11 @@ const FreelancerDashboard = ({ onCreateGig }) => {
             >
               Applications
             </TabsTrigger>
-            <TabsTrigger
-              value="earnings"
-              className="data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-md rounded-xl transition-all duration-300"
-            >
-              Earnings
-            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-8">
             {/* Stats Cards with gradients and mobile responsiveness */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {/* Total Earnings Card */}
-              <Card className="bg-gradient-to-br from-yellow-400 to-amber-500 text-white border border-yellow-300 rounded-xl shadow-lg">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-semibold">Total Earnings</p>
-                      <p className="text-3xl font-bold mt-1">
-                        ${stats.totalEarnings.toLocaleString()}
-                      </p>
-                    </div>
-                    <DollarSign className="h-10 w-10 text-white/80" />
-                  </div>
-                </CardContent>
-              </Card>
-
+            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-3 gap-6">
               {/* Active Gigs Card */}
               <Card className="bg-gradient-to-br from-purple-600 to-pink-500 text-white border border-purple-400 rounded-xl shadow-lg">
                 <CardContent className="p-6">
@@ -490,7 +476,10 @@ const CreateGigPage = ({ onBack }) => {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
       <div className="flex items-center gap-4 mb-8">
-        <Button onClick={onBack} className="bg-slate-200 text-slate-900 font-semibold hover:bg-slate-300 border border-slate-300 transition-colors duration-200">
+        <Button
+          onClick={onBack}
+          className="bg-slate-200 text-slate-900 font-semibold hover:bg-slate-300 border border-slate-300 transition-colors duration-200"
+        >
           <ArrowLeft className="w-4 h-4 mr-2" />
           Back to Dashboard
         </Button>

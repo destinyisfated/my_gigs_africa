@@ -15,11 +15,20 @@ import {
   SignedOut,
   UserButton,
   SignInButton,
+  useUser,
 } from "@clerk/nextjs";
 
 import { Briefcase, Menu } from "lucide-react";
 
 export function Navbar() {
+  const { user, isLoaded, isSignedIn } = useUser();
+
+  if (!isLoaded) {
+    return null; // or a loading spinner, etc.
+  }
+
+  const userRole = isSignedIn ? user.publicMetadata.role : null;
+
   return (
     <header className="sticky top-0 z-50 w-full bg-white text-slate-800 shadow-md justify-around align-center flex p-1 bg-amber-50">
       <div className="container flex h-14 items-center">
@@ -27,54 +36,105 @@ export function Navbar() {
 
         {/* Navigation Links & Auth Buttons */}
         <nav className="hidden md:flex flex-1 items-center justify-evenly space-x-6 text-sm font-bold">
-          <div className="mr-4 hidden md:flex items-center space-x-4">
-            <Link href="/" className="mr-6 flex items-center space-x-2">
-              <Briefcase className="h-6 w-6" />
-              <span className="font-extrabold text-2xl tracking-wide">
-                MyGigsAfrica
-              </span>
-            </Link>
-          </div>
+          <SignedOut>
+            <div className="mr-4 hidden md:flex items-center space-x-4">
+              <Link href="/" className="mr-6 flex items-center space-x-2">
+                <Briefcase className="h-6 w-6" />
+                <span className="font-extrabold text-2xl tracking-wide">
+                  MyGigsAfrica
+                </span>
+              </Link>
+            </div>
 
-          <div className="flex items-center space-x-6">
-            {" "}
-            <Link
-              href="/gigs"
-              className="md:mr-10 transition-colors text-slate font-bold hover:text-slate-800"
-            >
-              View Gigs
-            </Link>
-            <Link
-              href="/become-freelancer"
-              className="transition-colors text-slate font-bold hover:text-slate-800"
-            >
-              Become a Freelancer
-            </Link>
-            <Link
-              href="/payment"
-              className="transition-colors text-slate font-bold hover:text-slate-800"
-            >
-              Make a Payment
-            </Link>
-          </div>
+            <div className="flex items-center space-x-6">
+              {" "}
+              <Link
+                href="/gigs"
+                className="md:mr-10 transition-colors text-slate font-bold hover:text-slate-800"
+              >
+                View Gigs
+              </Link>
+              <Link
+                href="/become-freelancer"
+                className="transition-colors text-slate font-bold hover:text-slate-800"
+              >
+                Become a Freelancer
+              </Link>
+            </div>
 
-          <div>
-            <ClerkLoaded>
-              <SignedIn>
-                <UserButton afterSignOutUrl="/" />
-              </SignedIn>
-              <SignedOut>
-                <SignInButton mode="modal">
-                  <Button
-                    variant="outline"
-                    className=" text-white bg-purple-950 hover:bg-blue-500 hover:text-white transition-colors p-2 cursor-pointer"
-                  >
-                    Sign In
-                  </Button>
-                </SignInButton>
-              </SignedOut>
-            </ClerkLoaded>
-          </div>
+            <div>
+              <ClerkLoaded>
+                <SignedIn>
+                  <UserButton afterSignOutUrl="/" />
+                </SignedIn>
+                <SignedOut>
+                  <SignInButton mode="modal">
+                    <Button
+                      variant="outline"
+                      className=" text-white bg-purple-950 hover:bg-blue-500 hover:text-white transition-colors p-2 cursor-pointer"
+                    >
+                      Sign In
+                    </Button>
+                  </SignInButton>
+                </SignedOut>
+              </ClerkLoaded>
+            </div>
+          </SignedOut>
+
+          <SignedIn>
+            <div className="mr-4 hidden md:flex items-center space-x-4">
+              <Link href="/" className="mr-6 flex items-center space-x-2">
+                <Briefcase className="h-6 w-6" />
+                <span className="font-extrabold text-2xl tracking-wide">
+                  MyGigsAfrica
+                </span>
+              </Link>
+            </div>
+
+            <div className="flex items-center space-x-6">
+              {" "}
+              <Link
+                href="/gigs"
+                className="md:mr-10 transition-colors text-slate font-bold hover:text-slate-800"
+              >
+                View Gigs
+              </Link>
+              {userRole === "admin" && (
+                <Link
+                  href="/admin-dashboard"
+                  className="transition-colors text-slate font-bold hover:text-slate-800"
+                >
+                  View Dashboard
+                </Link>
+              )}
+              {userRole === "freelancer" && (
+                <Link
+                  href="/freelancer-dashboard"
+                  className="transition-colors text-slate font-bold hover:text-slate-800"
+                >
+                  View Dashboard
+                </Link>
+              )}
+            </div>
+
+            <div>
+              <ClerkLoaded>
+                <SignedIn>
+                  <UserButton afterSignOutUrl="/" />
+                </SignedIn>
+                <SignedOut>
+                  <SignInButton mode="modal">
+                    <Button
+                      variant="outline"
+                      className=" text-white bg-purple-950 hover:bg-blue-500 hover:text-white transition-colors p-2 cursor-pointer"
+                    >
+                      Sign In
+                    </Button>
+                  </SignInButton>
+                </SignedOut>
+              </ClerkLoaded>
+            </div>
+          </SignedIn>
         </nav>
 
         {/* Mobile Navigation */}
