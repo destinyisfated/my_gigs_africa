@@ -64,6 +64,7 @@ export default function GigListPage() {
             <div className="p-4">
               <h2 className="text-xl font-semibold text-gray-800 truncate">{gig.title}</h2>
               <p className="text-gray-600 mt-2 text-sm line-clamp-2">{gig.description}</p>
+              <p className="text-gray-600 mt-2 text-sm line-clamp-2">{gig.location}</p>
               <div className="mt-4 flex items-center justify-between">
                 <span className="text-2xl font-bold text-blue-600">${parseFloat(gig.price).toFixed(2)}</span>
                 <button className="bg-blue-600 text-white px-4 py-2 rounded-full text-sm font-medium hover:bg-blue-700 transition-colors">

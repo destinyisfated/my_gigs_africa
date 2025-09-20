@@ -56,3 +56,5 @@ class Gig(models.Model):
         return self.title
     def image_tag(self):
         return mark_safe('<img src="%s" width="80" />'% (self.image.url))
+
+
