@@ -7,7 +7,13 @@ urlpatterns = [
     path('transactions-api/', MpesaTransactionListAPIView.as_view(), name='transaction_list_api'),
      # NEW: API endpoint for the frontend to check transaction status
     path('check-status/<str:checkout_request_id>/', MpesaTransactionStatusAPIView.as_view(), name='transaction_status'),
-   path('gigs/', GigListAPIView.as_view(), name='gig_list'),
-   path('clerk/', clerk_webhook_handler, name='clerk-webhook'),
+    path('gigs/', GigListAPIView.as_view(), name='gig_list'),
+    path('clerk/', clerk_webhook_handler, name='clerk-webhook'),
+    path('freelancers/', FreelancerListAPIView.as_view(), name='freelancer_list'),
+    path('testimonials/', TestimonialListAPIView.as_view(), name='testimonial_list'),
+    path('freelancers1/', FreelancerListCreateAPIView.as_view(), name='freelancer_list_create'),
+    path('testimonials1/', TestimonialListCreateAPIView.as_view(), name='testimonial_list_create'),
+    path('gigs1/', GigCreateView.as_view(), name='gigs_list_create'),
+    
 ]
 

@@ -3,19 +3,23 @@ from datetime import datetime
 from django.conf import settings
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.response import Response
 from rest_framework import status
 import requests
+from rest_framework import parsers, serializers
 from requests.auth import HTTPBasicAuth
-from .models import MpesaTransaction, Gig, ClerkUser
+from .models import MpesaTransaction, Gig, ClerkUser, Freelancer, Testimonial
 from rest_framework.generics import ListAPIView
-from .serializers import MpesaTransactionSerializer, GigSerializer
+from .serializers import MpesaTransactionSerializer, GigSerializer, FreelancerSerializer, TestimonialSerializer
 import base64
 import json
 import os
+from rest_framework import generics
 from django.views.decorators.csrf import csrf_exempt
 from svix.webhooks import Webhook, WebhookVerificationError
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
+
+
+from rest_framework.decorators import api_view
 
 
 def get_access_token():
@@ -206,13 +210,6 @@ class MpesaCallbackAPIView(APIView):
 
         return Response({"ResultCode": 0, "ResultDesc": "Success"}, status=status.HTTP_200_OK)
 
-# class MpesaTransactionSerializer(ModelSerializer):
-#     """
-#     Serializer to convert the MpesaTransaction model to JSON.
-#     """
-#     class Meta:
-#         model = MpesaTransaction
-#         fields = '__all__'
 
 class MpesaTransactionListAPIView(ListAPIView):
     """
@@ -335,3 +332,51 @@ def update_clerk_role_to_freelancer(clerk_id):
         json=data
     )
     print(f"Clerk API response: {resp.status_code} {resp.text}")
+
+
+
+# Create a list view for Freelancer model
+class FreelancerListAPIView(APIView):
+    def get(self, request, format=None):
+        freelancers = Freelancer.objects.all()
+        serializer = FreelancerSerializer(freelancers, many=True)
+        return Response(serializer.data)
+
+# Create a list view for Testimonial model
+class TestimonialListAPIView(APIView):
+    def get(self, request, format=None):
+        testimonials = Testimonial.objects.all()
+        serializer = TestimonialSerializer(testimonials, many=True)
+        return Response(serializer.data)
+
+
+class FreelancerListCreateAPIView(generics.ListCreateAPIView):
+    queryset = Freelancer.objects.all()
+    serializer_class = FreelancerSerializer
+
+class TestimonialListCreateAPIView(generics.ListCreateAPIView):
+    queryset = Testimonial.objects.all()
+    serializer_class = TestimonialSerializer
+
+# class GigsListCreateAPIView(generics.ListCreateAPIView):
+#     queryset = Gig.objects.all()
+#     serializer_class = GigSerializer
+class GigCreateView(generics.CreateAPIView):
+    queryset = Gig.objects.all()
+    serializer_class = GigSerializer
+    permission_classes = [IsAuthenticated]
+    parser_classes = [parsers.MultiPartParser, parsers.FormParser]
+
+    def perform_create(self, serializer):
+        # Get the ClerkClient instance for the current authenticated user.
+        try:
+            creator_instance = ClerkClient.objects.get(clerk_id=self.request.user.clerk_id)
+        except ClerkClient.DoesNotExist:
+            raise serializers.ValidationError("Clerk user does not exist in our database.")
+            
+        # Pass the creator instance directly to the serializer's create method.
+        # This will be used by the serializer to get the email automatically.
+        serializer.save(creator=creator_instance)
+
+
+
