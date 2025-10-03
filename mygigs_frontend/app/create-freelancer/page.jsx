@@ -1,323 +1,329 @@
-"use client";
+'use client'
 
-// Import necessary hooks from React and Next.js
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { RefreshCw, Briefcase, Users, Mail } from 'lucide-react';
 
-// The main component for creating a freelancer profile
-export default function FreelancerCreatePage() {
-    // State to hold the form data. 'profile_image' is for the file, the rest are for text inputs.
-    const [formData, setFormData] = useState({
-        profile_image: null,
-        name: '', // New field for the freelancer's name
-        profession: '',
-        bio: '',
-        skills: '',
-        years_of_experience: '',
-        availability: '',
-        phone_number: '',
-        city: '',
-        country: '',
-    });
-    // State to store the temporary URL for the image preview
-    const [profileImagePreview, setProfileImagePreview] = useState(null);
-    // State to manage messages shown to the user (e.g., success or error)
-    const [message, setMessage] = useState(null);
-    // State to show a loading indicator while the form is submitting
-    const [loading, setLoading] = useState(false);
-    // Hook to handle client-side routing, used for redirection after submission
-    const router = useRouter();
+// --- Configuration ---
+// Simulate the currently logged-in freelancer ID (this would come from Django's session/token)
+const MOCK_FREELANCER_ID = 'freelancer-123';
+const API_BASE_URL = '/api/freelancer'; // Placeholder for your Django API base URL
 
-    // Event handler for all form input changes
-    const handleChange = (e) => {
-        const { name, value, files } = e.target;
-        // Check if the input is the file upload field
-        if (name === 'profile_image') {
-            const file = files[0];
-            setFormData({ ...formData, profile_image: file });
-            // Create a temporary URL for the file to show a preview
-            if (file) {
-                setProfileImagePreview(URL.createObjectURL(file));
-            } else {
-                setProfileImagePreview(null);
-            }
-        } else {
-            // For all other inputs, update the corresponding state value
-            setFormData({ ...formData, [name]: value });
-        }
-    };
+// Utility function to format dates
+const formatDate = (dateString) => {
+    if (!dateString) return 'N/A';
+    try {
+        return new Date(dateString).toLocaleDateString('en-US', {
+            year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+        });
+    } catch (e) {
+        return 'Invalid Date';
+    }
+};
 
-    // Handler to remove the selected image
-    const handleRemoveImage = () => {
-        setFormData({ ...formData, profile_image: null });
-        setProfileImagePreview(null);
-    };
+// --- Mock Data Simulation (Replace these with actual API fetch calls) ---
+// This data simulates what your Django DRF views would return
+const MOCK_GIGS_DATA = [
+    { id: 1, title: "Build React Component", description: "Complex state management required for a new dashboard widget.", creator_id: MOCK_FREELANCER_ID, budget: 800, status: 'Open', created_at: new Date('2025-07-20T10:00:00Z').toISOString() },
+    { id: 2, title: "Django API Endpoint Refactor", description: "Optimizing database queries and refactoring 5 existing REST endpoints.", creator_id: MOCK_FREELANCER_ID, budget: 1500, status: 'Closed', created_at: new Date('2025-07-25T12:00:00Z').toISOString() },
+    { id: 3, title: "Authentication Service Setup", description: "Integrate Clerk authentication into the main application.", creator_id: MOCK_FREELANCER_ID, budget: 1200, status: 'Open', created_at: new Date('2025-07-15T09:00:00Z').toISOString() },
+    // Gig from another user, should be ignored
+    { id: 4, title: "Design Landing Page", description: "Need a modern, flat logo design.", creator_id: 'another-user-456', budget: 300, status: 'Open', created_at: new Date('2025-07-01T15:00:00Z').toISOString() },
+];
 
-    // Event handler for form submission
-    const handleSubmit = async (e) => {
-        // Prevent the default form submission behavior which reloads the page
-        e.preventDefault();
-        // Set loading state to true to disable the button and show an indicator
-        setLoading(true);
-        // Clear any previous messages
-        setMessage(null);
+const MOCK_APPLICATIONS_DATA = [
+    // Applications for the freelancer's gigs (gig_id 1, 2, or 3)
+    { id: 101, gig_id: 1, client_id: 'client-A', client_name: 'Alice Johnson', message: "Ready to start immediately.", status: 'Pending', created_at: new Date('2025-07-21T11:00:00Z').toISOString() },
+    { id: 102, gig_id: 2, client_id: 'client-B', client_name: 'Bob Smith', message: "Expert in DRF and database optimization.", status: 'Accepted', created_at: new Date('2025-07-26T09:00:00Z').toISOString() },
+    { id: 103, gig_id: 1, client_id: 'client-C', client_name: 'Charlie Brown', message: "Have a similar portfolio item and good budget fit.", status: 'Pending', created_at: new Date('2025-07-22T14:00:00Z').toISOString() },
+    // client-A applies to gig 2 (re-used client)
+    { id: 104, gig_id: 2, client_id: 'client-A', client_name: 'Alice Johnson', message: "Also interested in this refactoring project.", status: 'Pending', created_at: new Date('2025-07-27T14:00:00Z').toISOString() },
+    { id: 105, gig_id: 3, client_id: 'client-D', client_name: 'David Lee', message: "I specialize in Clerk authentication integration.", status: 'Pending', created_at: new Date('2025-07-16T14:00:00Z').toISOString() },
+];
 
-        // Create a new FormData object to handle both text and file data
-        const formPayload = new FormData();
-        // Append each key-value pair from the state to the FormData object
-        for (const key in formData) {
-            formPayload.append(key, formData[key]);
-        }
-        
-        try {
-            // Send a POST request to the Django backend API endpoint
-            const response = await fetch('http://localhost:8000/core/freelancers1/', {
-                method: 'POST',
-                body: formPayload, // Send the FormData object as the request body
+// Function to simulate an API call
+const simulatedFetch = (data, delay = 500) => {
+    return new Promise(resolve => {
+        setTimeout(() => {
+            // Filter gigs/applications to only show data relevant to the current freelancer
+            const relevantData = data.filter(item => {
+                // For Gigs, check if the creator is the freelancer
+                if (item.creator_id) {
+                    return item.creator_id === MOCK_FREELANCER_ID;
+                }
+                // For Applications, we'd need to filter them later based on gig IDs, 
+                // but for simulation, we'll return all relevant mock apps.
+                return true; 
             });
+            resolve({
+                json: () => Promise.resolve(relevantData),
+                ok: true
+            });
+        }, delay);
+    });
+};
 
-            // Check if the response was successful (status code 200-299)
-            if (response.ok) {
-                // Display a success message
-                setMessage({ type: 'success', text: 'Freelancer profile created successfully!' });
-                // Reset the form fields to their initial empty state
-                setFormData({
-                    profile_image: null,
-                    name: '',
-                    profession: '',
-                    bio: '',
-                    skills: '',
-                    years_of_experience: '',
-                    availability: '',
-                    phone_number: '',
-                    city: '',
-                    country: '',
-                });
-                setProfileImagePreview(null); // Clear the image preview as well
-                // Redirect the user to the freelancers list page after a 2-second delay
-                setTimeout(() => {
-                    router.push('/freelancers');
-                }, 2000);
-            } else {
-                // If the response was not okay, parse the error data from the backend
-                const errorData = await response.json();
-                // Display an error message with details from the backend
-                setMessage({ type: 'error', text: 'Failed to create profile. ' + JSON.stringify(errorData) });
-            }
-        } catch (error) {
-            // Catch any network-related errors (e.g., server is down)
-            console.error('Network error:', error);
-            // Display a generic network error message
-            setMessage({ type: 'error', text: 'A network error occurred. Please try again.' });
-        } finally {
-            // This block always runs, so we set loading to false whether the request succeeded or failed
-            setLoading(false);
-        }
-    };
-
-    // The component's JSX for rendering the form
-    return (
-        // Container for the whole page with Tailwind CSS classes for styling
-        <div className="flex items-center justify-center min-h-screen bg-gray-100 p-4 font-inter">
-            {/* The form card with padding, rounded corners, and a shadow */}
-            <div className="w-full max-w-2xl p-8 space-y-8 bg-white rounded-2xl shadow-xl">
-                <h1 className="text-4xl font-extrabold text-center text-gray-800">Create Freelancer Profile</h1>
-
-                {/* The main form element */}
-                <form onSubmit={handleSubmit} className="space-y-6">
-                    {/* Image Upload section */}
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700">Profile Photo</label>
-                        {profileImagePreview ? (
-                            // Display the image preview if a file has been selected
-                            <div className="mt-2 flex items-center justify-center space-x-4">
-                                <img src={profileImagePreview} alt="Profile preview" className="h-24 w-24 rounded-full object-cover shadow-md" />
-                                <button
-                                    type="button"
-                                    onClick={handleRemoveImage}
-                                    className="text-red-600 hover:text-red-800 font-medium text-sm"
-                                >
-                                    Remove Photo
-                                </button>
-                            </div>
-                        ) : (
-                            // Show the drag-and-drop box if no file is selected
-                            <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
-                                <div className="space-y-1 text-center">
-                                    {/* SVG icon for the file upload area */}
-                                    <svg
-                                        className="mx-auto h-12 w-12 text-gray-400"
-                                        stroke="currentColor"
-                                        fill="none"
-                                        viewBox="0 0 48 48"
-                                        aria-hidden="true"
-                                    >
-                                        <path
-                                            d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
-                                            strokeWidth="2"
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                        />
-                                    </svg>
-                                    <div className="flex text-sm text-gray-600">
-                                        {/* The label that acts as the file upload button */}
-                                        <label
-                                            htmlFor="profile-image-upload"
-                                            className="relative cursor-pointer bg-white rounded-md font-medium text-indigo-600 hover:text-indigo-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500"
-                                        >
-                                            <span>Upload a file</span>
-                                        </label>
-                                        <p className="pl-1">or drag and drop</p>
-                                    </div>
-                                    <p className="text-xs text-gray-500">PNG, JPG, GIF up to 10MB</p>
-                                </div>
-                            </div>
-                        )}
-                        {/* The actual hidden file input */}
-                        <input
-                            id="profile-image-upload"
-                            name="profile_image"
-                            type="file"
-                            className="sr-only"
-                            onChange={handleChange}
-                        />
-                    </div>
-
-                    {/* Text Inputs section with a grid layout */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {/* Name input field - New field */}
-                        <div className="col-span-2">
-                            <label className="block text-sm font-medium text-gray-700">Name</label>
-                            <input
-                                type="text"
-                                name="name"
-                                value={formData.name}
-                                onChange={handleChange}
-                                required
-                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                            />
-                        </div>
-                        {/* Profession input field */}
-                        <div className="col-span-1">
-                            <label className="block text-sm font-medium text-gray-700">Profession</label>
-                            <input
-                                type="text"
-                                name="profession"
-                                value={formData.profession}
-                                onChange={handleChange}
-                                required
-                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                            />
-                        </div>
-                        {/* Years of Experience input field */}
-                        <div className="col-span-1">
-                            <label className="block text-sm font-medium text-gray-700">Years of Experience</label>
-                            <input
-                                type="number"
-                                name="years_of_experience"
-                                value={formData.years_of_experience}
-                                onChange={handleChange}
-                                required
-                                min="0"
-                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                            />
-                        </div>
-                        {/* Availability input field */}
-                        <div className="col-span-1">
-                            <label className="block text-sm font-medium text-gray-700">Availability</label>
-                            <input
-                                type="text"
-                                name="availability"
-                                value={formData.availability}
-                                onChange={handleChange}
-                                required
-                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                                placeholder="e.g., Full-time, Part-time"
-                            />
-                        </div>
-                        {/* Phone Number input field */}
-                        <div className="col-span-1">
-                            <label className="block text-sm font-medium text-gray-700">Phone Number</label>
-                            <input
-                                type="tel"
-                                name="phone_number"
-                                value={formData.phone_number}
-                                onChange={handleChange}
-                                required
-                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                                placeholder="e.g., +254712345678"
-                            />
-                        </div>
-                        {/* City input field */}
-                        <div className="col-span-1">
-                            <label className="block text-sm font-medium text-gray-700">City</label>
-                            <input
-                                type="text"
-                                name="city"
-                                value={formData.city}
-                                onChange={handleChange}
-                                required
-                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                            />
-                        </div>
-                        {/* Country input field */}
-                        <div className="col-span-1">
-                            <label className="block text-sm font-medium text-gray-700">Country</label>
-                            <input
-                                type="text"
-                                name="country"
-                                value={formData.country}
-                                onChange={handleChange}
-                                required
-                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                            />
-                        </div>
-                        {/* Skills input field (full width) */}
-                        <div className="col-span-2">
-                            <label className="block text-sm font-medium text-gray-700">Skills (comma-separated)</label>
-                            <input
-                                type="text"
-                                name="skills"
-                                value={formData.skills}
-                                onChange={handleChange}
-                                required
-                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                                placeholder="e.g., Python, Django, React, CSS"
-                            />
-                        </div>
-                        {/* Bio textarea (full width) */}
-                        <div className="col-span-2">
-                            <label className="block text-sm font-medium text-gray-700">Bio</label>
-                            <textarea
-                                name="bio"
-                                value={formData.bio}
-                                onChange={handleChange}
-                                required
-                                rows="4"
-                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                            ></textarea>
-                        </div>
-                    </div>
-
-                    {/* Submission button */}
-                    <div>
-                        <button
-                            type="submit"
-                            disabled={loading} // Disable the button while loading
-                            className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-lg font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
-                        >
-                            {loading ? 'Submitting...' : 'Create Profile'}
-                        </button>
-                    </div>
-                </form>
-
-                {/* Conditional rendering for success or error messages */}
-                {message && (
-                    <div className={`mt-4 p-4 rounded-lg text-center ${message.type === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                        <p className="font-medium">{message.text}</p>
-                    </div>
-                )}
+// --- Dashboard Components ---
+const StatCard = ({ title, value, icon: Icon, color }) => (
+    <div className={`p-6 rounded-xl shadow-xl transition duration-300 transform hover:scale-[1.02] ${color} text-white`}>
+        <div className="flex items-center space-x-4">
+            <Icon className="w-8 h-8" />
+            <div>
+                <p className="text-sm font-light uppercase opacity-80">{title}</p>
+                <p className="text-4xl font-extrabold">{value}</p>
             </div>
         </div>
+    </div>
+);
+
+const App = () => {
+    const [gigs, setGigs] = useState([]);
+    const [applications, setApplications] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard', 'gigs', 'applications'
+    
+    // 1. Fetch Gigs (Simulating call to /api/freelancer/gigs/)
+    const fetchGigs = useCallback(async () => {
+        // In a real Django app, this would be: 
+        // const response = await fetch(`${API_BASE_URL}/gigs/`);
+        
+        setIsLoading(true);
+        try {
+            // --- ACTUAL FETCH SIMULATION START ---
+            const response = await simulatedFetch(MOCK_GIGS_DATA);
+            const allGigs = await response.json();
+            
+            // Filter gigs created by the current freelancer
+            const freelancerGigs = allGigs.filter(g => g.creator_id === MOCK_FREELANCER_ID);
+
+            // Sort by most recent (assuming created_at is a string/date object)
+            freelancerGigs.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+            
+            setGigs(freelancerGigs);
+            setError(null);
+        } catch (e) {
+            console.error("Error fetching gigs:", e);
+            setError("Failed to load gigs from API.");
+        } finally {
+            setIsLoading(false);
+        }
+    }, []);
+
+    // 2. Fetch Applications (Simulating call to /api/freelancer/applications/)
+    const fetchApplications = useCallback(async (gigIds) => {
+        if (gigIds.length === 0) {
+            setApplications([]);
+            return;
+        }
+
+        // In a real Django app, this would be: 
+        // const response = await fetch(`${API_BASE_URL}/applications/?gig_ids=${gigIds.join(',')}`);
+
+        try {
+            // --- ACTUAL FETCH SIMULATION START ---
+            const response = await simulatedFetch(MOCK_APPLICATIONS_DATA);
+            const allApplications = await response.json();
+            
+            // Filter applications targeting this freelancer's gigs
+            const relevantApplications = allApplications.filter(app => gigIds.includes(app.gig_id));
+            
+            // Sort by most recent
+            relevantApplications.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+            
+            setApplications(relevantApplications);
+            setError(null);
+        } catch (e) {
+            console.error("Error fetching applications:", e);
+            setError("Failed to load applications from API.");
+        }
+    }, []);
+
+    // Initial data load and periodic refresh hook
+    useEffect(() => {
+        fetchGigs();
+        // Set up a periodic refresh (e.g., every 30 seconds) to simulate real-time updates
+        // In a real-world app, you might use WebSockets for better real-time
+        const interval = setInterval(fetchGigs, 30000); 
+        return () => clearInterval(interval);
+    }, [fetchGigs]);
+
+    // Fetch applications whenever the gigs list changes
+    useEffect(() => {
+        const freelancerGigIds = gigs.map(gig => gig.id);
+        fetchApplications(freelancerGigIds);
+    }, [gigs, fetchApplications]);
+
+    // 3. Computed State: Dashboard Metrics
+    const totalClients = useMemo(() => {
+        if (applications.length === 0) return 0;
+        // Use a Set to count only unique client IDs who have applied
+        const uniqueClients = new Set(applications.map(app => app.client_id));
+        return uniqueClients.size;
+    }, [applications]);
+    
+    const activeGigsCount = useMemo(() => {
+        // Count only gigs marked as 'Open' or similar status
+        return gigs.filter(g => g.status && g.status.toLowerCase() === 'open').length;
+    }, [gigs]);
+    
+    // --- Tab Content Rendering ---
+    const renderDashboard = () => (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <StatCard 
+                title="Total Gigs Created" 
+                value={gigs.length} 
+                icon={Briefcase} 
+                color="bg-gradient-to-r from-indigo-500 to-indigo-700"
+            />
+            <StatCard 
+                title="Total Active Gigs" 
+                value={activeGigsCount} 
+                icon={Briefcase} 
+                color="bg-gradient-to-r from-blue-500 to-blue-700"
+            />
+            <StatCard 
+                title="Total Unique Clients" 
+                value={totalClients} 
+                icon={Users} 
+                color="bg-gradient-to-r from-green-500 to-green-700"
+            />
+        </div>
     );
-}
+
+    const renderGigs = () => (
+        <div className="space-y-4">
+            <h3 className="text-xl font-semibold mb-4 text-gray-700">My Gigs (Total: {gigs.length})</h3>
+            {gigs.length === 0 ? (
+                <p className="text-center py-10 text-gray-500">You have not created any gigs yet.</p>
+            ) : (
+                gigs.map(gig => (
+                    <div key={gig.id} className="bg-white p-5 rounded-xl shadow-md border-l-4 border-indigo-500 transition duration-150 hover:shadow-lg">
+                        <div className="flex justify-between items-start">
+                             <h4 className="text-lg font-bold text-gray-900">{gig.title}</h4>
+                             <span className={`px-3 py-1 text-xs font-semibold rounded-full ${gig.status === 'Open' ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-700'}`}>
+                                {gig.status}
+                             </span>
+                        </div>
+                        <p className="text-sm text-gray-600 mt-1">{gig.description}</p>
+                        <div className="mt-3 flex justify-between text-xs text-gray-500 border-t pt-2">
+                            <span>Budget: <span className="font-medium text-gray-800">${gig.budget ? gig.budget.toLocaleString() : 'N/A'}</span></span>
+                            <span>Created: {formatDate(gig.created_at)}</span>
+                        </div>
+                    </div>
+                ))
+            )}
+        </div>
+    );
+
+    const renderApplications = () => (
+        <div className="space-y-4">
+            <h3 className="text-xl font-semibold mb-4 text-gray-700">
+                Received Applications (Total: {applications.length})
+            </h3>
+            {applications.length === 0 ? (
+                <p className="text-center py-10 text-gray-500">No applications have been made to your gigs yet.</p>
+            ) : (
+                applications.map(app => {
+                    const gigTitle = gigs.find(g => g.id === app.gig_id)?.title || `Gig ID: ${app.gig_id}`;
+                    return (
+                        <div key={app.id} className="bg-white p-5 rounded-xl shadow-md border-l-4 border-teal-500 transition duration-150 hover:shadow-lg">
+                            <div className="flex justify-between items-start">
+                                <p className="text-sm font-medium text-gray-800">
+                                    <span className="font-bold text-teal-600">{app.client_name || app.client_id}</span> applied for:
+                                </p>
+                                <span className={`px-3 py-1 text-xs font-semibold rounded-full ${app.status === 'Accepted' ? 'bg-blue-100 text-blue-700' : 'bg-yellow-100 text-yellow-700'}`}>
+                                    {app.status}
+                                </span>
+                            </div>
+                            <h4 className="text-lg font-bold text-gray-900 truncate mt-1">{gigTitle}</h4>
+                            
+                            <p className="text-sm text-gray-700 italic mt-2 border-l-2 pl-2 border-gray-200">
+                                "{app.message}"
+                            </p>
+                            <div className="mt-3 text-xs text-gray-500 border-t pt-2 text-right">
+                                <span>Date: {formatDate(app.created_at)}</span>
+                            </div>
+                        </div>
+                    );
+                })
+            )}
+        </div>
+    );
+    
+    // --- Main Layout ---
+    return (
+        <div className="min-h-screen bg-gray-50 font-sans p-4 sm:p-8">
+            <style>{`
+                /* Ensures Inter font is used */
+                @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+                body { font-family: 'Inter', sans-serif; }
+            `}</style>
+            
+            <header className="mb-8 border-b pb-4 flex justify-between items-center">
+                <div>
+                    <h1 className="text-3xl font-extrabold text-gray-800">Freelancer Dashboard</h1>
+                    <p className="text-sm text-gray-500 mt-1">
+                        Viewing data for Freelancer ID: <span className="font-mono text-xs bg-gray-200 p-1 rounded-md text-gray-700">{MOCK_FREELANCER_ID}</span>
+                    </p>
+                </div>
+                <button 
+                    onClick={fetchGigs} 
+                    disabled={isLoading}
+                    className="flex items-center space-x-2 bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg text-sm font-medium shadow-md transition duration-150 disabled:bg-gray-400"
+                    title="Manually refresh data from Django API"
+                >
+                    <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+                    <span>{isLoading ? 'Loading...' : 'Refresh Data'}</span>
+                </button>
+            </header>
+
+            {/* Error Message */}
+            {error && (
+                <div className="p-3 mb-6 text-center text-red-700 bg-red-100 border border-red-300 rounded-lg max-w-4xl mx-auto shadow-md">
+                    <p className="font-medium">{error}</p>
+                </div>
+            )}
+
+            {/* Navigation Tabs */}
+            <nav className="flex space-x-1 bg-white p-2 rounded-xl shadow-2xl mb-8 max-w-4xl mx-auto">
+                {[
+                    { key: 'dashboard', name: 'Dashboard Overview', icon: Users }, 
+                    { key: 'gigs', name: 'My Gigs', icon: Briefcase }, 
+                    { key: 'applications', name: 'Applications', icon: Mail }
+                ].map(({ key, name, icon: Icon }) => (
+                    <button
+                        key={key}
+                        onClick={() => setActiveTab(key)}
+                        className={`
+                            flex items-center justify-center space-x-2 px-4 py-2 text-sm font-semibold rounded-xl transition-all duration-200 flex-1
+                            ${activeTab === key
+                                ? 'bg-indigo-600 text-white shadow-lg'
+                                : 'text-gray-600 hover:bg-indigo-50 hover:text-indigo-600'
+                            }
+                        `}
+                    >
+                        <Icon className="w-4 h-4" />
+                        <span>{name}</span>
+                    </button>
+                ))}
+            </nav>
+
+            {/* Content Area */}
+            <main className="max-w-4xl mx-auto p-6 bg-white rounded-2xl shadow-2xl min-h-[500px]">
+                {/* Show a centralized loading indicator if data is being fetched */}
+                {isLoading && (
+                    <div className="flex items-center justify-center h-full p-20">
+                        <RefreshCw className="w-8 h-8 text-indigo-500 animate-spin" />
+                        <p className="ml-3 text-indigo-600 font-medium">Fetching dynamic data...</p>
+                    </div>
+                )}
+                
+                {!isLoading && activeTab === 'dashboard' && renderDashboard()}
+                {!isLoading && activeTab === 'gigs' && renderGigs()}
+                {!isLoading && activeTab === 'applications' && renderApplications()}
+            </main>
+        </div>
+    );
+};
+
+export default App;

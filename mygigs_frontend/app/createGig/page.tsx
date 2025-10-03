@@ -11,8 +11,7 @@ const CreateGigPage = ({ onBack }) => {
         category: "",
         price: "",
         location: "",
-        contact_email: "",
-        contact_phone: "",
+        
     });
 
     const [imageFile, setImageFile] = useState(null);
@@ -43,7 +42,7 @@ const CreateGigPage = ({ onBack }) => {
         setLoading(true);
         setMessage(null);
 
-        const requiredFields = ["title", "description", "category", "price", "location", "contact_email"];
+        const requiredFields = ["title", "description", "category", "price", "location"];
         const missingFields = requiredFields.filter(field => !gigData[field]);
 
         if (missingFields.length > 0 || !imageFile) {
@@ -58,8 +57,6 @@ const CreateGigPage = ({ onBack }) => {
         formData.append("category", gigData.category);
         formData.append("price", gigData.price);
         formData.append("location", gigData.location);
-        formData.append("contact_email", gigData.contact_email);
-        formData.append("contact_phone", gigData.contact_phone);
         formData.append("image", imageFile);
 
         try {
@@ -79,8 +76,7 @@ const CreateGigPage = ({ onBack }) => {
                     category: "",
                     price: "",
                     location: "",
-                    contact_email: "",
-                    contact_phone: "",
+                    
                 });
                 setImageFile(null);
                 setImagePreview(null);
@@ -247,7 +243,7 @@ const CreateGigPage = ({ onBack }) => {
                                 htmlFor="price"
                                 className="block text-sm font-medium text-gray-700 mb-1"
                             >
-                                Price (USD)
+                                Price (KSh)
                             </label>
                             <input
                                 type="number"
@@ -280,44 +276,6 @@ const CreateGigPage = ({ onBack }) => {
                             className="w-full px-4 py-2 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-orange-500"
                             required
                         />
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label
-                                htmlFor="contact_email"
-                                className="block text-sm font-medium text-gray-700 mb-1"
-                            >
-                                Contact Email
-                            </label>
-                            <input
-                                type="email"
-                                id="contact_email"
-                                name="contact_email"
-                                placeholder="e.g., email@example.com"
-                                value={userEmail}
-                                onChange={handleInputChange}
-                                className="w-full px-4 py-2 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-orange-500"
-                                required
-                            />
-                        </div>
-                        <div>
-                            <label
-                                htmlFor="contact_phone"
-                                className="block text-sm font-medium text-gray-700 mb-1"
-                            >
-                                Contact Phone (Optional)
-                            </label>
-                            <input
-                                type="tel"
-                                id="contact_phone"
-                                name="contact_phone"
-                                placeholder="e.g., +254 712 345 678"
-                                value={gigData.contact_phone}
-                                onChange={handleInputChange}
-                                className="w-full px-4 py-2 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-orange-500"
-                            />
-                        </div>
                     </div>
 
                     <div>

@@ -12,7 +12,7 @@ export default function TransactionsPage() {
       try {
         setLoading(true);
         // This URL must match your Django backend's API endpoint
-        const response = await fetch('http://localhost:8000/core/transactions-api/');
+        const response = await fetch('http://localhost:8000/core/transactions/');
         if (!response.ok) {
           throw new Error('Failed to fetch transactions');
         }

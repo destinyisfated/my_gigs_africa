@@ -19,6 +19,7 @@ import {
 } from "@clerk/nextjs";
 
 import { Briefcase, Menu } from "lucide-react";
+import JoinModal from "./JoinModal";
 
 export function Navbar() {
   const { user, isLoaded, isSignedIn } = useUser();
@@ -53,12 +54,6 @@ export function Navbar() {
                 className="md:mr-10 transition-colors text-slate font-bold hover:text-slate-800"
               >
                 View Gigs
-              </Link>
-              <Link
-                href="/become-freelancer"
-                className="transition-colors text-slate font-bold hover:text-slate-800"
-              >
-                Become a Freelancer
               </Link>
             </div>
 
@@ -99,9 +94,14 @@ export function Navbar() {
               >
                 View Gigs
               </Link>
+
+              {userRole !== "admin" && userRole !== "freelancer" && (
+                <JoinModal />
+              )}
+
               {userRole === "admin" && (
                 <Link
-                  href="/admin-dashboard"
+                  href="/admintest"
                   className="transition-colors text-slate font-bold hover:text-slate-800"
                 >
                   View Dashboard

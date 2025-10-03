@@ -23,21 +23,6 @@ export function Hero() {
             skills and grow your career.
           </p>
           <div className="mt-8 flex flex-col sm:flex-row justify-center md:justify-start gap-4">
-            <SignedIn>
-              {/* If signed in, show the Join Modal */}
-              <JoinModal />
-            </SignedIn>
-            <SignedOut>
-              {/* If signed out, show a Sign In button with the same style */}
-              <SignInButton mode="modal">
-                <Button
-                  size="lg"
-                  className="bg-yellow-500 text-slate-900 font-bold hover:bg-yellow-400"
-                >
-                  Join for KSh 200/year
-                </Button>
-              </SignInButton>
-            </SignedOut>
             <Button
               asChild
               variant="outline"

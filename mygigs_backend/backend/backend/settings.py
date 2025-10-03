@@ -27,7 +27,7 @@ SECRET_KEY = 'django-insecure-_k9-9pr5n@bh@25_nxz@1$v6qehyo2lis)uindv_ft&z=cp&$%
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost', 'f7d18ef874ed.ngrok-free.app']
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '1bc239e300a7.ngrok-free.app']
 
 
 # Application definition
@@ -132,8 +132,20 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     
+
     # Add your production frontend URL here
 ]
+from corsheaders.defaults import default_headers
+ # We use CORS_ALLOW_ALL_ORIGINS = True for simplicity in a development environment.
+CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_HEADERS = list(default_headers) + [
+    'authorization',
+]
+
+
+    # CSRF settings to allow the frontend to make requests
+CSRF_TRUSTED_ORIGINS = ['http://localhost:3000', 'http://127.0.0.1:3000']
+
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 

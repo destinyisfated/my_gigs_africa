@@ -47,9 +47,9 @@ export default function PaymentPage() {
 
         if (isSuccess) {
           // Redirect to the profile page after a brief delay
-          setTimeout(() => {
-            router.push("/create-profile");
-          }, 2000); // Wait 2 seconds before redirecting
+
+            router.push("/create-freelancer");
+ // Wait 1 second before redirecting
         }
       } else {
         // Still pending, continue polling
