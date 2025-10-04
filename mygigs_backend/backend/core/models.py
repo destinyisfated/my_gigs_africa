@@ -144,13 +144,4 @@ class Application(models.Model):
     def __str__(self):
         return f"Application for '{self.gig.title}' by {self.applicant.last_name}"
 
-    class Meta:
-        verbose_name = "Gig Application"
-        verbose_name_plural = "Gig Applications"
-        
-        # CRITICAL: Enforce one application per gig per user.
-        # This constraint prevents the database from saving duplicate applications.
-        unique_together = ('gig', 'applicant')
-        
-        # Default sorting: most recent applications first
-        ordering = ['-applied_at']
+   

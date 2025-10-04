@@ -19,7 +19,6 @@ import {
 } from "@clerk/nextjs";
 
 import { Briefcase, Menu } from "lucide-react";
-import JoinModal from "./JoinModal";
 
 export function Navbar() {
   const { user, isLoaded, isSignedIn } = useUser();
@@ -29,12 +28,14 @@ export function Navbar() {
   }
 
   const userRole = isSignedIn ? user.publicMetadata.role : null;
+  const isAdmin = userRole === "admin";
+  const isFreelancer = userRole === "freelancer";
 
   return (
     <header className="sticky top-0 z-50 w-full bg-white text-slate-800 shadow-md justify-around align-center flex p-1 bg-amber-50">
       <div className="container flex h-14 items-center">
         {/* Desktop Navigation */}
-
+        {}
         {/* Navigation Links & Auth Buttons */}
         <nav className="hidden md:flex flex-1 items-center justify-evenly space-x-6 text-sm font-bold">
           <SignedOut>
@@ -54,6 +55,12 @@ export function Navbar() {
                 className="md:mr-10 transition-colors text-slate font-bold hover:text-slate-800"
               >
                 View Gigs
+              </Link>
+              <Link
+                href="/become-freelancer"
+                className="transition-colors text-slate font-bold hover:text-slate-800"
+              >
+                Become a Freelancer
               </Link>
             </div>
 
@@ -94,25 +101,20 @@ export function Navbar() {
               >
                 View Gigs
               </Link>
-
-              {userRole !== "admin" && userRole !== "freelancer" && (
-                <JoinModal />
-              )}
-
-              {userRole === "admin" && (
+              {isAdmin && (
                 <Link
-                  href="/admintest"
+                  href="/admin-dashboard"
                   className="transition-colors text-slate font-bold hover:text-slate-800"
                 >
-                  View Dashboard
+                  Dashboard
                 </Link>
               )}
-              {userRole === "freelancer" && (
+              {isFreelancer && (
                 <Link
                   href="/freelancer-dashboard"
                   className="transition-colors text-slate font-bold hover:text-slate-800"
                 >
-                  View Dashboard
+                  Your Dashboard
                 </Link>
               )}
             </div>

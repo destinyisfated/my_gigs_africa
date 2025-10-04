@@ -47,9 +47,7 @@ export default function PaymentPage() {
 
         if (isSuccess) {
           // Redirect to the profile page after a brief delay
-
-            router.push("/create-freelancer");
- // Wait 1 second before redirecting
+          router.push("/create-profile");
         }
       } else {
         // Still pending, continue polling
@@ -128,7 +126,7 @@ export default function PaymentPage() {
       {!isModalOpen && (
         <button
           onClick={() => setIsModalOpen(true)}
-          className="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-6 rounded-full shadow-lg transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+          className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-md shadow-lg transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 cursor-pointer text-sm"
         >
           Become a Freelancer
         </button>
@@ -137,7 +135,7 @@ export default function PaymentPage() {
       {/* The main modal container - conditionally rendered and animated */}
       {isModalOpen && (
         <div className="fixed inset-0 flex items-center justify-center z-50 p-4 bg-black bg-opacity-40 backdrop-blur-sm transition-opacity duration-300">
-          <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all duration-500 ease-out scale-100 opacity-100">
+          <div className="relative bg-white rounded-md shadow-2xl w-full max-w-md overflow-hidden transform transition-all duration-500 ease-out scale-100 opacity-100">
             {/* Close Button */}
             <button
               onClick={() => {
