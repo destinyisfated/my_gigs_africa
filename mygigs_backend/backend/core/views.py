@@ -22,6 +22,8 @@ from django.utils.decorators import method_decorator
 from django.db.models import Sum, Count
 from rest_framework.decorators import api_view, permission_classes
 
+# Get your Clerk Webhook Signing Secret from environment variables
+
 
 def get_access_token():
     """
@@ -252,6 +254,16 @@ class GigListAPIView(APIView):
         serializer = GigSerializer(gigs, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+class ClerkUserListAPIView(APIView):
+    def get(self, request, *args, **kwargs):
+        """
+        Retrieves all ClerkUser objects and returns them as a JSON list.
+        """
+        users = ClerkUser.objects.all()
+        serializer = ClerkUserSerializer(users, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+       
+
 
 @csrf_exempt
 def clerk_webhook_handler(request):
@@ -281,6 +293,8 @@ def clerk_webhook_handler(request):
         email = user_data.get("email_addresses", [{}])[0].get("email_address")
         first_name = user_data.get("first_name")
         last_name = user_data.get("last_name")
+        public_metadata = user_data.get("public_metadata", {})
+        role = public_metadata.get("role", "user")  # Default to 'default_role'
 
         try:
             user, created = ClerkUser.objects.get_or_create(
@@ -289,6 +303,7 @@ def clerk_webhook_handler(request):
                     "first_name": first_name,
                     "last_name": last_name,
                     "email": email,
+                    "role": role,
                 }
             )
             if not created:
@@ -296,6 +311,7 @@ def clerk_webhook_handler(request):
                 user.first_name = first_name
                 user.last_name = last_name
                 user.email = email
+                user.role =role
                 user.save()
                 print(f"User updated: {clerk_id}")
             else:
@@ -311,6 +327,83 @@ def clerk_webhook_handler(request):
         print(f"User deleted: {clerk_id}")
 
     return HttpResponse(status=200)
+
+
+# @csrf_exempt
+# def clerk_webhook_handler(request):
+#     WEBHOOK_SECRET = os.environ.get('CLERK_WEBHOOK_SECRET')
+#     if request.method != 'POST':
+#         return HttpResponse('Method not allowed', status=405)
+
+#     if not WEBHOOK_SECRET:
+#         return HttpResponse('Server error: Webhook secret not configured', status=500)
+
+#     # 1. Verify the Webhook Signature
+#     try:
+#         # Get headers and payload
+#         headers = request.headers
+#         payload = request.body
+
+#         wh = Webhook(WEBHOOK_SECRET)
+        
+#         # This verifies the signature and parses the payload into a dictionary
+#         evt = wh.verify(payload, headers) 
+
+#     except WebhookVerificationError as e:
+#         print(f"Webhook verification failed: {e}")
+#         return HttpResponse('Invalid signature', status=400)
+#     except Exception as e:
+#         print(f"Error processing webhook: {e}")
+#         return HttpResponse('Bad Request', status=400)
+
+#     # 2. Process the Event
+#     event_type = evt['type']
+#     data = evt['data']
+#     clerk_id = data['id']
+
+#     if event_type == 'user.created' or event_type == 'user.updated':
+#         # Safely extract user data (always check available data in the Clerk payload)
+#         email = data['email_addresses'][0]['email_address'] if data.get('email_addresses') else ''
+#         first_name = data.get('first_name', '')
+#         last_name = data.get('last_name', '')
+        
+#         # Extract metadata (where roles are often stored)
+#         role = data.get('public_metadata', {}).get('role', 'basic') 
+        
+#         # 3. Create or Update the User in Django DB (Upsert Logic)
+#         try:
+#             user, created = ClerkUser.objects.update_or_create(
+#                 clerk_id=clerk_id,
+#                 defaults={
+#                     'email': email,
+#                     'first_name': first_name,
+#                     'last_name': last_name,
+#                     'role': role,
+#                 }
+#             )
+            
+#             if created:
+#                 print(f"New user created in Django: {clerk_id}")
+#             else:
+#                 print(f"Existing user updated in Django: {clerk_id}")
+
+#         except Exception as db_e:
+#             print(f"Database error during user upsert: {db_e}")
+#             # Returning a 500 will tell Clerk to retry the webhook
+#             return HttpResponse('Database operation failed', status=500)
+
+#     elif event_type == 'user.deleted':
+#         try:
+#             ClerkUser.objects.filter(clerk_id=clerk_id).delete()
+#             print(f"User deleted from Django: {clerk_id}")
+#         except Exception as db_e:
+#             print(f"Database error during user deletion: {db_e}")
+#             return HttpResponse('Database operation failed', status=500)
+
+#     # Always return a 200 status code on successful processing
+#     return HttpResponse('Webhook received and processed', status=200)
+
+
 
 #Still does not sync user with backend
 def update_clerk_role_to_freelancer(clerk_id):
@@ -360,9 +453,7 @@ class TestimonialListCreateAPIView(generics.ListCreateAPIView):
     queryset = Testimonial.objects.all()
     serializer_class = TestimonialSerializer
 
-# class GigsListCreateAPIView(generics.ListCreateAPIView):
-#     queryset = Gig.objects.all()
-#     serializer_class = GigSerializer
+
 
 class DashboardDataAPIView(APIView):
     """
@@ -391,6 +482,35 @@ class DashboardDataAPIView(APIView):
                 'testimonials': testimonials_data,
                 'transactions': transactions_data,
                 'users': users_data,
+            }
+
+            return Response(dashboard_data, status=status.HTTP_200_OK)
+        
+        except Exception as e:
+            print(f"Error fetching dashboard data: {e}")
+            return Response(
+                {"error": "An internal server error occurred while fetching dashboard data."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+class FreelancerDashboardAPIView(APIView):
+    """
+    API view to fetch all data required for the freelancer dashboard in a single call.
+    """
+    def get(self, request, *args, **kwargs) -> Response:
+        try:
+            # Fetch all data from the database
+            gigs = Gig.objects.filter(creator=request.user.freelancer).all()
+            applications = Application.objects.filter(gig__creator=request.user.freelancer).all()
+           
+            
+            # Serialize the data
+            gigs_data = GigSerializer(gigs, many=True).data
+            applications_data = ApplicationSerializer(applications, many=True).data
+          
+            # Combine into a single JSON response
+            dashboard_data = {
+                'gigs': gigs_data,
+                'applications': applications_data,
             }
 
             return Response(dashboard_data, status=status.HTTP_200_OK)

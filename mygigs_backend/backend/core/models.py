@@ -49,6 +49,7 @@ class Freelancer(models.Model):
     profession = models.CharField(max_length=255, help_text="The freelancer's primary profession or job title.")
     bio = models.TextField(blank=True, help_text="A short biography or summary of the freelancer.")
     clerk_id = models.CharField(max_length=255, unique=True, null=True, blank=True)
+    
     # Profile details
     profile_image = models.ImageField(upload_to='freelancer_profiles/', blank=True, null=True, help_text="Profile picture for the freelancer.")
     years_of_experience = models.CharField(max_length=255, help_text="Number of years of experience in their profession.")
@@ -78,22 +79,17 @@ class Gig(models.Model):
     A Django model to represent a single gig listing.
     """
 
-    # The creator is a ForeignKey to the ClerkUser model.
-    # This establishes a relationship and links the gig to the user who created it.
-    # on_delete=models.CASCADE means that if a ClerkUser is deleted, all their gigs will also be deleted.
-
+    # The creator is a ForeignKey to the ClerkUser model. to establish a relationship between gigs and the  freelancer.
     creator = models.ForeignKey(Freelancer, on_delete=models.CASCADE, related_name='gigs', null=True, blank=True)
+    
     # Basic gig information
-   
     title = models.CharField(max_length=200, help_text="The title of the gig.")
     description = models.TextField(help_text="A detailed description of the gig.")
-    
     
     # Financial and location details
     price = models.DecimalField(max_digits=10, decimal_places=2, help_text="The price for the gig.")
     location = models.CharField(max_length=100, help_text="The city or area where the gig is located.")
 
-   
     # Image and date fields
     image = models.ImageField(upload_to='gig_images/', help_text="An image representing the gig.", blank=True, null=True)
 
@@ -108,7 +104,6 @@ class Gig(models.Model):
         return mark_safe('<img src="%s" width="80" />'% (self.image.url))
 
 
-
 class Testimonial(models.Model):
     author_name = models.CharField(max_length=100)
     text = models.TextField(help_text="The full testimonial text.")
@@ -116,8 +111,6 @@ class Testimonial(models.Model):
 
     def __str__(self):
         return f"Testimonial by {self.author_name}"
-
-
 
 
 class Application(models.Model):

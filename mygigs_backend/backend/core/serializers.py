@@ -5,7 +5,7 @@ class ClerkUserSerializer(serializers.ModelSerializer):
     """Serializer for the ClerkUser model."""
     class Meta:
         model = ClerkUser
-        fields = ['clerk_id', 'first_name', 'last_name', 'email', 'role', 'created_at']
+        fields = '__all__'
         
 class MpesaTransactionSerializer(serializers.ModelSerializer):
     """Serializer for the MpesaTransaction model."""
@@ -59,4 +59,8 @@ class ClerkUserNestedSerializer(serializers.ModelSerializer):
         fields = ['clerk_id', 'first_name', 'last_name', 'email']
         read_only_fields = fields # Ensure these fields are only for display
 
-
+class ApplicationSerializer(serializers.ModelSerializer):
+    """Serializer for the Application model."""
+    class Meta:
+        model = Application
+        fields = '__all__'

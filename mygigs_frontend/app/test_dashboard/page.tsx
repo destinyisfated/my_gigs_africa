@@ -424,7 +424,7 @@ const FreelancerDashboard = ({ onCreateGig, onSelectGig }) => {
               </h1>
             </div>
             <Button
-              className="bg-gradient-to-br from-purple-700 to-green-500 hover:from-green-700 hover:to-blue-600 text-white font-bold py-2 px-6 rounded-md shadow-md transform transition-transform duration-200 hover:scale-105 cursor-pointer"
+              className="bg-gradient-to-br from-purple-700 to-green-500 hover:from-green-700 hover:to-blue-600 text-black font-bold py-2 px-6 rounded-md shadow-md transform transition-transform duration-200 hover:scale-105 cursor-pointer"
               onClick={onCreateGig}
             >
               <Plus className="w-4 h-4 mr-2" />
