@@ -59,8 +59,3 @@ class ClerkUserNestedSerializer(serializers.ModelSerializer):
         fields = ['clerk_id', 'first_name', 'last_name', 'email']
         read_only_fields = fields # Ensure these fields are only for display
 
-class ApplicationSerializer(serializers.ModelSerializer):
-    """Serializer for the Application model."""
-    class Meta:
-        model = Application
-        fields = '__all__'

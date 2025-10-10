@@ -24,7 +24,6 @@ urlpatterns = [
     path('transactions/', MpesaTransactionListAPIView.as_view(), name='transaction_list'),
     path('clerk-users/', ClerkUserListAPIView.as_view(), name='clerk_user_list'),
     # APIView-based endpoints for freelancer dashboard
-    path('freelancer-data/', FreelancerDashboardDataAPIView.as_view(), name='freelancer_dashboard_data'),
     # The new API endpoint for the admin dashboard data
     path('dashboard-data/', DashboardDataAPIView.as_view(), name='dashboard_data'),
 ]
