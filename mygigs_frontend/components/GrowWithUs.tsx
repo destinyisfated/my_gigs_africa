@@ -1,6 +1,6 @@
 import React from "react";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import JoinModal from "./JoinModal";
 
 export function GrowWithUs() {
   return (
@@ -14,12 +14,7 @@ export function GrowWithUs() {
           MyGigs Africa.
         </p>
         <Link href="/sign-up">
-          <Button
-            size="lg"
-            className="bg-blue-600 hover:bg-blue-700 transition-colors"
-          >
-            Sign Up for KSh 200/year
-          </Button>
+          <JoinModal />
         </Link>
       </div>
     </section>

@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import MpesaTransaction, Gig, ClerkUser, Freelancer, Testimonial
+from .models import MpesaTransaction, Gig, ClerkUser, Freelancer, Testimonial, Application
 
 class ClerkUserSerializer(serializers.ModelSerializer):
     """Serializer for the ClerkUser model."""
@@ -53,9 +53,15 @@ class GigSerializer(serializers.ModelSerializer):
 
 
 class ClerkUserNestedSerializer(serializers.ModelSerializer):
-    """Serializer for displaying relevant Applicant/Creator details within other models."""
     class Meta:
         model = ClerkUser
         fields = ['clerk_id', 'first_name', 'last_name', 'email']
         read_only_fields = fields # Ensure these fields are only for display
 
+class ApplicationSerializer(serializers.ModelSerializer):
+    gig_title = serializers.CharField(source='gig.title', read_only=True)
+
+    class Meta:
+        model = Application
+        fields = ['id', 'gig', 'gig_title', 'applicant_clerk_id', 'cover_letter', 'applied_at']
+        read_only_fields = ['id', 'applicant_clerk_id', 'applied_at', 'gig_title']

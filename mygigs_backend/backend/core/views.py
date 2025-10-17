@@ -1,5 +1,7 @@
 # Create your views here.
 from datetime import datetime
+from rest_framework import viewsets
+from rest_framework.permissions import IsAuthenticated
 from django.conf import settings
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -9,7 +11,7 @@ from rest_framework import parsers, serializers
 from requests.auth import HTTPBasicAuth
 from .models import MpesaTransaction, Gig, ClerkUser, Freelancer, Testimonial, Application
 from rest_framework.generics import ListAPIView, ListCreateAPIView
-from .serializers import MpesaTransactionSerializer, GigSerializer, FreelancerSerializer, TestimonialSerializer, ClerkUserSerializer
+from .serializers import ApplicationSerializer, MpesaTransactionSerializer, GigSerializer, FreelancerSerializer, TestimonialSerializer, ClerkUserSerializer
 import base64
 import json
 import os
@@ -20,11 +22,53 @@ from svix.webhooks import Webhook, WebhookVerificationError
 from django.http import HttpResponse, JsonResponse
 from django.utils.decorators import method_decorator
 from django.db.models import Sum, Count
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, parser_classes
+from rest_framework.parsers import MultiPartParser, FormParser
+from .auth import verify_clerk_token
+from rest_framework import exceptions
+from rest_framework.exceptions import AuthenticationFailed
+from jose import jwt
+from jose.exceptions import ExpiredSignatureError, JWTError
+from rest_framework.authentication import BaseAuthentication
 
+CLERK_JWKS_URL = "https://wired-ferret-99.clerk.accounts.dev/.well-known/jwks.json"
+CLERK_ISSUER = "https://wired-ferret-99.clerk.accounts.dev"
 # Get your Clerk Webhook Signing Secret from environment variables
 
+class ClerkJWTAuthentication(BaseAuthentication):
+    def authenticate(self, request):
+        auth_header = request.headers.get("Authorization")
 
+        if not auth_header or not auth_header.startswith("Bearer "):
+            return None
+
+        token = auth_header.split(" ")[1]
+        try:
+            jwks = requests.get(CLERK_JWKS_URL).json()
+            unverified_header = jwt.get_unverified_header(token)
+            key = next(
+                (k for k in jwks["keys"] if k["kid"] == unverified_header["kid"]),
+                None,
+            )
+            if not key:
+                raise exceptions.AuthenticationFailed("Invalid Clerk token")
+
+            payload = jwt.decode(
+                token,
+                key,
+                algorithms=["RS256"],
+                audience=None,
+                issuer=CLERK_ISSUER,
+            )
+        except ExpiredSignatureError:
+            raise exceptions.AuthenticationFailed("Expired Clerk token")
+        except JWTError:
+            raise exceptions.AuthenticationFailed("Invalid Clerk token")
+
+        # Return user info (no DB user required)
+        return (payload, None)
+    
+    
 def get_access_token():
     """
     Fetches a new M-Pesa API access token using the consumer key and secret.
@@ -329,83 +373,6 @@ def clerk_webhook_handler(request):
     return HttpResponse(status=200)
 
 
-# @csrf_exempt
-# def clerk_webhook_handler(request):
-#     WEBHOOK_SECRET = os.environ.get('CLERK_WEBHOOK_SECRET')
-#     if request.method != 'POST':
-#         return HttpResponse('Method not allowed', status=405)
-
-#     if not WEBHOOK_SECRET:
-#         return HttpResponse('Server error: Webhook secret not configured', status=500)
-
-#     # 1. Verify the Webhook Signature
-#     try:
-#         # Get headers and payload
-#         headers = request.headers
-#         payload = request.body
-
-#         wh = Webhook(WEBHOOK_SECRET)
-        
-#         # This verifies the signature and parses the payload into a dictionary
-#         evt = wh.verify(payload, headers) 
-
-#     except WebhookVerificationError as e:
-#         print(f"Webhook verification failed: {e}")
-#         return HttpResponse('Invalid signature', status=400)
-#     except Exception as e:
-#         print(f"Error processing webhook: {e}")
-#         return HttpResponse('Bad Request', status=400)
-
-#     # 2. Process the Event
-#     event_type = evt['type']
-#     data = evt['data']
-#     clerk_id = data['id']
-
-#     if event_type == 'user.created' or event_type == 'user.updated':
-#         # Safely extract user data (always check available data in the Clerk payload)
-#         email = data['email_addresses'][0]['email_address'] if data.get('email_addresses') else ''
-#         first_name = data.get('first_name', '')
-#         last_name = data.get('last_name', '')
-        
-#         # Extract metadata (where roles are often stored)
-#         role = data.get('public_metadata', {}).get('role', 'basic') 
-        
-#         # 3. Create or Update the User in Django DB (Upsert Logic)
-#         try:
-#             user, created = ClerkUser.objects.update_or_create(
-#                 clerk_id=clerk_id,
-#                 defaults={
-#                     'email': email,
-#                     'first_name': first_name,
-#                     'last_name': last_name,
-#                     'role': role,
-#                 }
-#             )
-            
-#             if created:
-#                 print(f"New user created in Django: {clerk_id}")
-#             else:
-#                 print(f"Existing user updated in Django: {clerk_id}")
-
-#         except Exception as db_e:
-#             print(f"Database error during user upsert: {db_e}")
-#             # Returning a 500 will tell Clerk to retry the webhook
-#             return HttpResponse('Database operation failed', status=500)
-
-#     elif event_type == 'user.deleted':
-#         try:
-#             ClerkUser.objects.filter(clerk_id=clerk_id).delete()
-#             print(f"User deleted from Django: {clerk_id}")
-#         except Exception as db_e:
-#             print(f"Database error during user deletion: {db_e}")
-#             return HttpResponse('Database operation failed', status=500)
-
-#     # Always return a 200 status code on successful processing
-#     return HttpResponse('Webhook received and processed', status=200)
-
-
-
-#Still does not sync user with backend
 def update_clerk_role_to_freelancer(clerk_id):
     CLERK_API_KEY = settings.CLERK_SECRET_KEY
     if not CLERK_API_KEY:
@@ -521,3 +488,44 @@ class FreelancerDashboardAPIView(APIView):
                 {"error": "An internal server error occurred while fetching dashboard data."},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
+class GigListCreateView(generics.ListCreateAPIView):
+    queryset = Gig.objects.all()
+    serializer_class = GigSerializer
+    permission_classes = [permissions.IsAuthenticated]  # Or custom for freelancers only
+
+    def perform_create(self, serializer):
+        serializer.save(freelancer=self.request.user)
+
+class ApplicationCreateView(generics.CreateAPIView):
+    queryset = Application.objects.all()
+    serializer_class = ApplicationSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def perform_create(self, serializer):
+        serializer.save(applicant=self.request.user)
+
+class GigApplicationsView(generics.ListAPIView):
+    serializer_class = ApplicationSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        gig_id = self.kwargs['gig_id']
+        return Application.objects.filter(gig_id=gig_id, gig__freelancer=self.request.user)
+    
+class UserGigViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet that only returns Gigs posted by the currently authenticated user.
+    """
+    serializer_class = GigSerializer
+    # 🔐 Must be IsAuthenticated to ensure the token is verified and request.user is set
+    permission_classes = [IsAuthenticated] 
+
+    def get_queryset(self):
+        # 🔑 This is the crucial filtering step:
+        # It queries Gigs where the 'poster' ForeignKey matches the logged-in user object.
+        return Gig.objects.filter(poster=self.request.user).order_by('-date_posted')
+
+    def perform_create(self, serializer):
+        # Ensures that new gigs are automatically assigned to the creator
+        serializer.save(poster=self.request.user)

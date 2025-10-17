@@ -3,11 +3,9 @@ from .views import *
 
 from rest_framework.routers import DefaultRouter
 
-
-
-# Create a router instance
-
-
+router = DefaultRouter()
+# 🔑 Register the filtered view set to the endpoint the frontend is calling
+router.register(r'gigs', UserGigViewSet, basename='user-gigs')
 
 urlpatterns = [
     path('stk-push/', MpesaSTKPushAPIView.as_view(), name='stk_push_request'),
@@ -24,6 +22,7 @@ urlpatterns = [
     path('transactions/', MpesaTransactionListAPIView.as_view(), name='transaction_list'),
     path('clerk-users/', ClerkUserListAPIView.as_view(), name='clerk_user_list'),
     # APIView-based endpoints for freelancer dashboard
+    path('freelancers-dashboard/', FreelancerDashboardAPIView.as_view(), name='dashboard_freelancer_list_create'),
     # The new API endpoint for the admin dashboard data
     path('dashboard-data/', DashboardDataAPIView.as_view(), name='dashboard_data'),
 ]

@@ -133,8 +133,10 @@ class Application(models.Model):
     cover_letter = models.TextField(verbose_name="Cover Letter/Pitch")
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='PENDING')
     applied_at = models.DateTimeField(auto_now_add=True)
+    class Meta:
+        unique_together = ['gig', 'applicant']
 
     def __str__(self):
-        return f"Application for '{self.gig.title}' by {self.applicant.last_name}"
+        return f"Application for {self.gig.title} by {self.applicant.username}"
 
    

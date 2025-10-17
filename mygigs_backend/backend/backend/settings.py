@@ -27,7 +27,7 @@ SECRET_KEY = 'django-insecure-_k9-9pr5n@bh@25_nxz@1$v6qehyo2lis)uindv_ft&z=cp&$%
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '01c1e2fd100b.ngrok-free.app']
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '018ba433106f.ngrok-free.app']
 
 
 # Application definition
@@ -159,4 +159,8 @@ PASSKEY = config('PASSKEY')
 # For local development, use a tool like Ngrok to expose your local server
 MPESA_CALLBACK_URL = config('MPESA_CALLBACK_URL')
 CLERK_WEBHOOK_SECRET = config('CLERK_WEBHOOK_SECRET')
+
+#JWT and JWK settings for Clerk integration
+
 CLERK_SECRET_KEY = config('CLERK_SECRET_KEY')
+CLERK_JWKS_URL = config('CLERK_JWKS_URL')

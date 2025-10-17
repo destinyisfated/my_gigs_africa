@@ -1,21 +1,95 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { FaMapMarkerAlt } from 'react-icons/fa';
+import { MapPin, Search, ChevronLeft, ChevronRight } from "lucide-react";
+import { motion } from "framer-motion";
+import { useState, useEffect } from "react";
+
+// Skeleton Loader
+function GigSkeletonCard() {
+  return (
+    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col animate-pulse">
+      <div className="h-32 w-full bg-gray-200"></div>
+      <div className="p-4 flex flex-col flex-grow">
+        <div className="h-4 bg-gray-200 rounded w-3/4 mb-3"></div>
+        <div className="h-3 bg-gray-200 rounded w-5/6 mb-3"></div>
+        <div className="h-3 bg-gray-200 rounded w-2/3 mb-3"></div>
+        <div className="mt-4 h-8 bg-gray-200 rounded-lg"></div>
+      </div>
+    </div>
+  );
+}
+
+// Pagination Component
+function Pagination({ currentPage, totalPages, onPageChange }) {
+  const pages = [];
+  const maxVisiblePages = 5;
+  const startPage = Math.max(
+    1,
+    Math.min(
+      currentPage - Math.floor(maxVisiblePages / 2),
+      totalPages - maxVisiblePages + 1
+    )
+  );
+  const endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+
+  for (let i = startPage; i <= endPage; i++) pages.push(i);
+
+  return (
+    <div className="flex justify-center items-center mt-12 space-x-2">
+      <button
+        onClick={() => onPageChange(currentPage - 1)}
+        disabled={currentPage === 1}
+        className={`px-3 py-2 rounded-xl flex items-center gap-1 text-sm font-medium transition-all ${
+          currentPage === 1
+            ? "text-gray-400 cursor-not-allowed"
+            : "bg-blue-600 text-white hover:bg-blue-700 shadow-sm"
+        }`}
+      >
+        <ChevronLeft size={16} /> Prev
+      </button>
+
+      {pages.map((page) => (
+        <button
+          key={page}
+          onClick={() => onPageChange(page)}
+          className={`px-3 py-2 rounded-xl text-sm font-semibold transition-all ${
+            currentPage === page
+              ? "bg-blue-600 text-white shadow-md"
+              : "bg-gray-100 hover:bg-gray-200 text-gray-700"
+          }`}
+        >
+          {page}
+        </button>
+      ))}
+
+      <button
+        onClick={() => onPageChange(currentPage + 1)}
+        disabled={currentPage === totalPages}
+        className={`px-3 py-2 rounded-xl flex items-center gap-1 text-sm font-medium transition-all ${
+          currentPage === totalPages
+            ? "text-gray-400 cursor-not-allowed"
+            : "bg-blue-600 text-white hover:bg-blue-700 shadow-sm"
+        }`}
+      >
+        Next <ChevronRight size={16} />
+      </button>
+    </div>
+  );
+}
 
 export default function GigsPage() {
   const [gigs, setGigs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const gigsPerPage = 12;
 
   useEffect(() => {
     const fetchGigs = async () => {
       try {
-        const response = await fetch('http://localhost:8000/core/gigs/');
-        if (!response.ok) {
-          throw new Error('Failed to fetch gigs');
-        }
+        const response = await fetch("http://localhost:8000/core/gigs/");
+        if (!response.ok) throw new Error("Failed to fetch gigs");
         const data = await response.json();
         setGigs(data);
       } catch (err) {
@@ -24,110 +98,132 @@ export default function GigsPage() {
         setLoading(false);
       }
     };
-
     fetchGigs();
   }, []);
 
-  const filteredGigs = gigs.filter(gig => {
+  const filteredGigs = gigs.filter((gig) => {
     const query = searchQuery.toLowerCase();
-    const titleMatch = gig.title.toLowerCase().includes(query);
-    const priceMatch = String(gig.price).toLowerCase().includes(query);
-    const locationMatch = (gig.location || '').toLowerCase().includes(query);
-    return titleMatch || priceMatch || locationMatch;
+    return (
+      gig.title.toLowerCase().includes(query) ||
+      String(gig.price).toLowerCase().includes(query) ||
+      (gig.location || "").toLowerCase().includes(query)
+    );
   });
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-100">
-        <p className="text-xl font-medium text-gray-500">Loading gigs...</p>
-      </div>
-    );
-  }
+  const totalPages = Math.ceil(filteredGigs.length / gigsPerPage);
+  const startIndex = (currentPage - 1) * gigsPerPage;
+  const currentGigs = filteredGigs.slice(startIndex, startIndex + gigsPerPage);
 
-  if (error) {
+  if (error)
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-100">
-        <p className="text-red-500 text-lg">Error: {error}</p>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <p className="text-red-500 text-lg font-medium">Error: {error}</p>
       </div>
     );
-  }
 
   return (
-    <div className="bg-gray-100 min-h-screen font-sans">
-      {/* Header */}
-      <header className="bg-white shadow-sm py-4 px-8 flex items-center justify-between">
-        <div className="flex items-center space-x-8">
-          <div className="text-2xl font-bold text-gray-800">MyGigsAfrica</div>
-          <nav>
-            <ul className="flex space-x-4 text-gray-600">
-              <li><a href="#" className="hover:text-blue-600 font-medium">View Gigs</a></li>
-              <li><a href="#" className="hover:text-blue-600 font-medium">Become a Freelancer</a></li>
-              <li><a href="#" className="hover:text-blue-600 font-medium">Make a Payment</a></li>
-            </ul>
-          </nav>
-        </div>
-        <div className="flex items-center space-x-4">
-          <input
-            type="text"
-            placeholder="Search gigs..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-80 px-4 py-2 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          <button className="p-2 rounded-full bg-gray-200 hover:bg-gray-300 transition-colors">
-            {/* You can replace this with a user icon */}
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.121 17.804A8.996 8.996 0 0112 15c2.31 0 4.46.787 6.121 2.804M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
+    <div className="bg-gray-50 min-h-screen font-[Inter]">
+      {/* Header Search Bar */}
+      <header className="bg-white py-4 px-6 md:px-10 flex items-center justify-center sticky top-0 z-40">
+        <div className="flex items-center space-x-3 w-full max-w-2xl">
+          <div className="relative flex-grow">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search gigs, categories, or locations..."
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="w-full pl-12 pr-4 py-3 rounded-full shadow-sm border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200 bg-gray-50 hover:bg-white"
+            />
+          </div>
+          <button className="hidden sm:block p-3 rounded-full bg-blue-600 text-white hover:bg-blue-700 transition">
+            <Search className="h-5 w-5" />
           </button>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="p-8">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {filteredGigs.length > 0 ? (
-            filteredGigs.map((gig) => (
-              <div key={gig.id} className="bg-white rounded-2xl shadow-lg overflow-hidden flex flex-col">
-                <div className="relative h-48 w-full">
-                  {gig.image ? (
-                    <img
-                      src={`http://localhost:8000${gig.image}`}
-                      alt={gig.title}
-                      className="object-cover w-full h-full"
-                    />
-                  ) : (
-                    <div className="bg-gray-300 w-full h-full flex items-center justify-center text-gray-500">
-                      No Image Available
+      <main className="px-6 md:px-12 lg:px-16 py-10">
+        {loading ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
+            {Array.from({ length: 12 }).map((_, i) => (
+              <GigSkeletonCard key={i} />
+            ))}
+          </div>
+        ) : currentGigs.length > 0 ? (
+          <>
+            <motion.div
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4 }}
+              className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6"
+            >
+              {currentGigs.map((gig) => (
+                <motion.div
+                  key={gig.id}
+                  whileHover={{ scale: 1.03 }}
+                  className="bg-white border border-gray-100 rounded-2xl shadow-sm hover:shadow-xl transition-all overflow-hidden flex flex-col"
+                >
+                  <div className="relative h-32 bg-gray-100">
+                    {gig.image ? (
+                      <img
+                        src={`http://localhost:8000${gig.image}`}
+                        alt={gig.title}
+                        className="object-cover w-full h-full"
+                      />
+                    ) : (
+                      <div className="h-full w-full flex items-center justify-center text-gray-400 text-sm">
+                        No Image
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="p-4 flex flex-col flex-grow">
+                    <h2 className="text-md font-semibold text-gray-800 line-clamp-2 leading-snug mb-1">
+                      {gig.title}
+                    </h2>
+                    <p className="text-gray-500 text-sm line-clamp-2 flex-grow">
+                      {gig.description}
+                    </p>
+
+                    <div className="mt-3 border-t border-gray-100 pt-3 text-sm">
+                      <div className="flex items-center text-gray-500 mb-1">
+                        <MapPin className="h-4 w-4 mr-1 text-blue-500" />
+                        {gig.location || "Remote"}
+                      </div>
+
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-700 text-xs">
+                          {gig.creator || "Unknown"}
+                        </span>
+                        <span className="text-blue-600 font-semibold text-sm">
+                          KES {gig.price}
+                        </span>
+                      </div>
                     </div>
-                  )}
-                </div>
-                <div className="p-4 flex flex-col flex-grow">
-                  <div className="flex justify-between items-start mb-2">
-                    <h2 className="text-xl font-bold text-gray-800 line-clamp-2 mr-2">{gig.title}</h2>
-                    <span className="bg-green-100 text-green-800 text-sm font-semibold px-2 py-1 rounded-full">
-                      KES{parseFloat(gig.price).toFixed(2)}
-                    </span>
-                  </div>
-                  <p className="text-gray-600 mt-2 text-sm line-clamp-2 flex-grow">{gig.description}</p>
-                  <div className="flex items-center mt-2 text-gray-500 text-sm">
-                    <FaMapMarkerAlt className="mr-1" />
-                    <span>{gig.location || 'Location Not Specified'}</span>
-                  </div>
-                  <div className="mt-4 flex justify-center">
-                    <button className="w-full bg-blue-600 text-white px-6 py-2 rounded-full font-medium hover:bg-blue-700 transition-colors">
-                      Apply Now
+
+                    <button className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition focus:ring-2 focus:ring-blue-500 focus:ring-offset-1">
+                      Apply
                     </button>
                   </div>
-                </div>
-              </div>
-            ))
-          ) : (
-            <div className="col-span-full text-center text-gray-500 text-lg mt-8">
-              <p>No gigs found matching your search.</p>
-            </div>
-          )}
-        </div>
+                </motion.div>
+              ))}
+            </motion.div>
+
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+            />
+          </>
+        ) : (
+          <div className="text-center text-gray-500 text-lg mt-10">
+            <p>No gigs found matching your search.</p>
+          </div>
+        )}
       </main>
     </div>
   );

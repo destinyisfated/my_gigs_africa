@@ -13,7 +13,7 @@ const formatPrice = (price: string) => {
   return number.toString();
 };
 
-export default function PaymentPage() {
+export default function JoinModal() {
   const [phoneNumber, setPhoneNumber] = useState<string>("");
   const [amount, setAmount] = useState<string>("1");
   const [loading, setLoading] = useState<boolean>(false);
